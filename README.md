@@ -1,16 +1,39 @@
-# React + Vite
+👇
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+👜 MyCoolStore
 
-Currently, two official plugins are available:
+A responsive E-Commerce storefront built with React, Vite, and Tailwind CSS, showcasing optimized state management, custom hooks, and persistent data handling.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+🚀 Features
+🛒 Persistent Cart & Wishlist: Uses localStorage to retain data across sessions
+⚡ Optimized Filtering: Real-time category filtering & search using useMemo
+⏳ Sales Timer: Persistent countdown timer in Banner component
+📱 Responsive UI: Mobile-first design with Tailwind CSS and smooth side-drawer panels
+💳 Checkout Flow: Multi-step order simulation with validation and success state
+🛠️ Tech Stack
+Frontend: React.js (v18+)
+Styling: Tailwind CSS
+Icons: React Icons
+Build Tool: Vite
+State Management: React Hooks (useState, useEffect, useMemo)
+📂 Project Structure
+src/
+├── assets/          
+├── Components/      
+│   ├── Banner/      
+│   ├── Cart/        
+│   ├── Navbar/      
+│   ├── Products/    
+│   └── OrderSummary/
+├── Home.jsx         
+└── ProductList.js   
+⚙️ Setup
+git clone https://github.com/your-username/mycoolstore.git
+cd mycoolstore
+npm install
+npm run dev
+📌 Future Enhancements
+Authentication 🔐
+Payment Integration 💰
+Order History 📦
+Backend Integration 🌐
