@@ -1,60 +1,27 @@
-👜 MyCoolStore
-A high-performance, responsive E-Commerce storefront built with React, Vite, and Tailwind CSS. This project showcases professional state management, custom hooks, and persistent data handling tailored for modern web standards.
+MyCoolStore
+A responsive e-commerce storefront built during my 3rd year at MANIT, focusing on state persistence and optimized rendering.
 
-🚀 Features
-🛒 Persistent Cart & Wishlist: Implemented custom logic using localStorage to ensure user selections are retained across browser sessions.
+🌟 Features
+Persistent State: Cart and wishlist data saved via localStorage for session continuity.
 
-⚡ Optimized Filtering: Real-time category filtering and search functionality utilizing the useMemo hook to minimize re-renders and maximize performance.
+Performance Optimized: Real-time search and category filtering using useMemo to prevent unnecessary re-renders.
 
-⏳ Sales Timer: A synchronized, persistent countdown timer integrated into the Banner component to track limited-time offers.
+Sales Logic: Integrated countdown banner with persistent timer logic.
 
-📱 Responsive UI: Mobile-first design architecture using Tailwind CSS, featuring smooth, z-index prioritized side-drawer panels for an app-like experience.
-
-💳 Checkout Flow: A multi-step order simulation that manages state transitions from validation in the OrderSummary to the final OrderPlaced success state.
+Modern UI: High-priority side panels (Cart/Wishlist) with advanced z-index layering and Tailwind CSS.
 
 🛠️ Tech Stack
-Frontend: React.js (v18+)
-
-Styling: Tailwind CSS
-
-Icons: React Icons (Fa, Go)
+Frontend: React.js & Tailwind CSS
 
 Build Tool: Vite
 
+Icons: React Icons
+
 State Management: React Hooks (useState, useEffect, useMemo)
 
-📂 Project Structure
-Plaintext
-src/
-├── assets/             # Project images and global media
-├── Components/         # Modular and reusable UI components
-│   ├── Banner/         # Sales banner with countdown logic
-│   ├── Cart/           # Side-drawer cart management
-│   ├── Navbar/         # Navigation & real-time search
-│   ├── Products/       # Product grid & filtering logic
-│   └── OrderSummary/   # Checkout validation flow
-├── Home.jsx            # Centralized State Controller
-└── ProductList.js      # Centralized product data configuration
-⚙️ Setup
-Clone the repository:
+⚙️ Installation
+Clone the repo.
 
-Bash
-git clone https://github.com/Siddharth-Tiwari-23/MyCoolStore.git
-Install dependencies:
+Run npm install.
 
-Bash
-npm install
-Start the development server:
-
-Bash
-npm run dev
-📌 Future Enhancements
-Authentication 🔐: Implementing Firebase or JWT for user accounts.
-
-Payment Integration 💰: Integrating Stripe or Razorpay for real transactions.
-
-Order History 📦: Creating a user dashboard to track previous purchases.
-
-Backend Integration 🌐: Moving from local data to a full MERN stack (MongoDB, Express, Node.js).
-
-Author: Siddharth Tiwari | NIT Bhopal (MANIT)
+Start the development server with npm run dev
