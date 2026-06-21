@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000/api/chat";
+const API_URL = "https://mycoolstore-backend.onrender.com/api/chat";
 
 export const sendChatMessage = async (message) => {
   const response = await fetch(API_URL, {

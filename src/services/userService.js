@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000/api/auth";
+const API_URL = "https://mycoolstore-backend.onrender.com/api/auth";
 
 export const getProfile = async () => {
   const token = localStorage.getItem("token");
