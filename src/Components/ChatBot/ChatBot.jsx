@@ -17,13 +17,15 @@ const ChatBot = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [messages, setMessages] = useState([
-    {
-      sender: "bot",
-      text:
-        "👋 Hi Siddharth!\nAsk me about products, deals, categories or shopping recommendations.",
-    },
-  ]);
+  const userName = localStorage.getItem("userName") || "User";
+
+const [messages, setMessages] = useState([
+  {
+    sender: "bot",
+    text:
+      `👋 Hi ${userName}!\nAsk me about products, deals, categories or shopping recommendations.`,
+  },
+]);
 
   const bottomRef = useRef(null);
 
