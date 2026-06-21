@@ -10,10 +10,35 @@ export const chatWithBot = async (req, res) => {
     const { message } = req.body;
 
     const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
-});
+      model: "gemini-2.5-flash",
+    });
 
-    const result = await model.generateContent(message);
+    const prompt = `
+You are CoolBot, an e-commerce shopping assistant.
+
+VERY IMPORTANT:
+- Maximum 3 lines.
+- Maximum 40 words.
+- No introductions.
+- No explanations.
+- No markdown.
+- No paragraphs.
+- Give direct recommendations only.
+
+Example:
+
+User: best jeans under 300
+
+Bot:
+Slim Fit Jeans - ₹299
+Regular Fit Jeans - ₹279
+Stretch Denim - ₹249
+
+User Question:
+${message}
+`;
+
+const result = await model.generateContent(prompt);
 
     const reply = result.response.text();
 

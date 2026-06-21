@@ -1,21 +1,40 @@
-import React, { useState } from "react";
-import { FaRobot, FaTimes } from "react-icons/fa";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+} from "react";
+
+import {
+  FaRobot,
+  FaTimes,
+  FaPaperPlane,
+} from "react-icons/fa";
+
 import { sendChatMessage } from "../../services/chatService";
 
 const ChatBot = () => {
   const [open, setOpen] = useState(false);
-
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const [messages, setMessages] = useState([
     {
       sender: "bot",
-      text: "Hi 👋 I am CoolBot. Ask me anything.",
+      text:
+        "👋 Hi Siddharth!\nAsk me about products, deals, categories or shopping recommendations.",
     },
   ]);
 
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages, loading]);
+
   const sendMessage = async () => {
-    if (!message.trim()) return;
+    if (!message.trim() || loading) return;
 
     const userMessage = message;
 
@@ -28,10 +47,10 @@ const ChatBot = () => {
     ]);
 
     setMessage("");
+    setLoading(true);
 
     try {
-      const data =
-        await sendChatMessage(userMessage);
+      const data = await sendChatMessage(userMessage);
 
       setMessages((prev) => [
         ...prev,
@@ -39,7 +58,7 @@ const ChatBot = () => {
           sender: "bot",
           text:
             data.reply ||
-            "No response received",
+            "Sorry, I couldn't find anything.",
         },
       ]);
     } catch (error) {
@@ -47,62 +66,97 @@ const ChatBot = () => {
         ...prev,
         {
           sender: "bot",
-          text: "Server Error",
+          text:
+            "❌ Server Error. Please try again.",
         },
       ]);
     }
+
+    setLoading(false);
   };
 
   return (
     <>
+      {/* Floating Button */}
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-xl z-50"
+        className="fixed bottom-5 right-5 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-2xl z-50"
       >
         {open ? <FaTimes /> : <FaRobot />}
       </button>
 
       {open && (
-        <div className="fixed bottom-24 right-6 w-[350px] h-[500px] bg-white border rounded-xl shadow-2xl flex flex-col z-50">
+        <div className="fixed bottom-24 right-5 w-[380px] h-[550px] bg-white rounded-2xl shadow-2xl border flex flex-col overflow-hidden z-50">
 
-          <div className="bg-blue-600 text-white p-4 rounded-t-xl font-bold">
+          {/* Header */}
+          <div className="bg-blue-600 text-white px-4 py-3 flex items-center gap-2 font-semibold">
+            <FaRobot />
             CoolBot Assistant
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 space-y-3">
+          {/* Messages Area */}
+          <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
+
             {messages.map((msg, index) => (
               <div
                 key={index}
-                className={`p-2 rounded-lg max-w-[80%] ${
+                className={`flex ${
                   msg.sender === "user"
-                    ? "bg-blue-600 text-white ml-auto"
-                    : "bg-gray-200"
+                    ? "justify-end"
+                    : "justify-start"
                 }`}
               >
-                {msg.text}
+                <div
+                  className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm whitespace-pre-wrap break-words shadow-sm ${
+                    msg.sender === "user"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white border text-gray-800"
+                  }`}
+                >
+                  {msg.text}
+                </div>
               </div>
             ))}
+
+            {loading && (
+              <div className="flex justify-start">
+                <div className="bg-white border px-4 py-3 rounded-2xl text-sm text-gray-500">
+                  🤖 CoolBot is typing...
+                </div>
+              </div>
+            )}
+
+            <div ref={bottomRef}></div>
+
           </div>
 
-          <div className="flex border-t">
+          {/* Input Area */}
+          <div className="border-t bg-white p-3 flex gap-2">
+
             <input
               type="text"
               value={message}
+              placeholder="Ask about products..."
+              className="flex-1 border rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
               onChange={(e) =>
                 setMessage(e.target.value)
               }
-              placeholder="Type here..."
-              className="flex-1 p-3 outline-none"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  sendMessage();
+                }
+              }}
             />
 
             <button
               onClick={sendMessage}
-              className="bg-blue-600 text-white px-5"
+              disabled={loading}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-xl transition"
             >
-              Send
+              <FaPaperPlane />
             </button>
-          </div>
 
+          </div>
         </div>
       )}
     </>

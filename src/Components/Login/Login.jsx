@@ -1,89 +1,78 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { loginUser } from "../../services/authService";
+import "./Login.css";
 
 function Login() {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [message, setMessage] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-        console.log("Login button clicked");
+    try {
+      const response = await loginUser({
+        email,
+        password,
+      });
 
-        try {
-            const response = await loginUser({
-                email,
-                password,
-            });
+      if (response.success) {
+        localStorage.setItem("token", response.token);
 
-            console.log("Login Response:", response);
+        localStorage.setItem(
+          "user",
+          JSON.stringify(response.user)
+        );
 
-            if (response.success) {
+        window.location.href = "/profile";
+      } else {
+        setMessage(response.message);
+      }
+    } catch (error) {
+      setMessage("Login Failed");
+    }
+  };
 
-                // Save token
-                localStorage.setItem("token", response.token);
+  return (
+    <div className="auth-container">
+      <div className="auth-card">
 
-                // Save user details
-                localStorage.setItem(
-                    "user",
-                    JSON.stringify(response.user)
-                );
+        <h2>MyCoolStore Login</h2>
 
-                // Redirect
-                window.location.href = "/profile";
-            }
-            else {
-                setMessage(response.message || "Login Failed");
-            }
+        <form onSubmit={handleSubmit}>
+          <input
+            type="email"
+            placeholder="Enter Email"
+            value={email}
+            onChange={(e)=>setEmail(e.target.value)}
+            required
+          />
 
-        } catch (error) {
-            console.error("Login Error:", error);
-            setMessage("Something went wrong");
-        }
-    };
+          <input
+            type="password"
+            placeholder="Enter Password"
+            value={password}
+            onChange={(e)=>setPassword(e.target.value)}
+            required
+          />
 
-    return (
-        <div style={{ padding: "20px" }}>
-            <h2>Login</h2>
+          <button type="submit">
+            Login
+          </button>
+        </form>
 
-            <form onSubmit={handleSubmit}>
+        {message && (
+          <p className="error">{message}</p>
+        )}
 
-                <div>
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                    />
-                </div>
-
-                <br />
-
-                <div>
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
-                </div>
-
-                <br />
-
-                <button type="submit">
-                    Login
-                </button>
-
-            </form>
-
-            <br />
-
-            {message && <p>{message}</p>}
+        <div className="auth-link">
+          New User? <Link to="/register">Register</Link>
         </div>
-    );
+
+      </div>
+    </div>
+  );
 }
 
 export default Login;

@@ -5,6 +5,7 @@ import {
 } from "react-router-dom";
 
 import Login from "./Components/Login/Login";
+import Register from "./Components/Register/Register";
 import Home from "./Components/Home/Home";
 import ProductDetails from "./Components/ProductDetails/ProductDetails";
 import Orders from "./Components/Orders/Orders";
@@ -18,55 +19,54 @@ function App() {
       <Route
         path="/login"
         element={
-          token ? (
-            <Navigate to="/profile" />
-          ) : (
-            <Login />
-          )
+          token
+            ? <Navigate to="/profile" />
+            : <Login />
+        }
+      />
+
+      <Route
+        path="/register"
+        element={
+          token
+            ? <Navigate to="/profile" />
+            : <Register />
         }
       />
 
       <Route
         path="/profile"
         element={
-          token ? (
-            <Home />
-          ) : (
-            <Navigate to="/login" />
-          )
+          token
+            ? <Home />
+            : <Navigate to="/login" />
         }
       />
 
       <Route
         path="/product/:id"
         element={
-          token ? (
-            <ProductDetails />
-          ) : (
-            <Navigate to="/login" />
-          )
+          token
+            ? <ProductDetails />
+            : <Navigate to="/login" />
         }
       />
 
       <Route
         path="/orders"
         element={
-          token ? (
-            <Orders />
-          ) : (
-            <Navigate to="/login" />
-          )
+          token
+            ? <Orders />
+            : <Navigate to="/login" />
         }
       />
 
       <Route
         path="*"
         element={
-          token ? (
-            <Navigate to="/profile" />
-          ) : (
-            <Navigate to="/login" />
-          )
+          token
+            ? <Navigate to="/profile" />
+            : <Navigate to="/login" />
         }
       />
 

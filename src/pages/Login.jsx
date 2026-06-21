@@ -1,7 +1,8 @@
+import "./Auth.css";
 import Login from "../Components/Login/Login";
 
 function LoginPage() {
-    return <Login />;
+  return <Login />;
 }
 
 export default LoginPage;
