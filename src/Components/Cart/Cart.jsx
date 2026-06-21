@@ -1,34 +1,75 @@
 import React from "react";
-import { FaMinus, FaPlus, FaTrash } from "react-icons/fa";
+import {
+  FaMinus,
+  FaPlus,
+  FaTrash,
+} from "react-icons/fa";
 
-const Cart = ({ activePanel, handleClose, cart, removeItem, quantityIncrement, quantityDecrement, subTotal, orderTotal, shippingFee, setOrderSummary }) => {
+const Cart = ({
+  activePanel,
+  handleClose,
+  cart,
+  removeItem,
+  quantityIncrement,
+  quantityDecrement,
+  subTotal,
+  orderTotal,
+  shippingFee,
+  setOrderSummary,
+}) => {
   const isCartEmpty = cart.length === 0;
 
   return (
     <div
-      className={`flex flex-col justify-between gap-5 bg-zinc-100 fixed top-0 right-0 bottom-0 left-auto w-full sm:w-[480px] border-l z-50 border-zinc-300 py-7 transform transition-transform duration-300
-      ${activePanel === "cart" ? "translate-x-0" : "translate-x-full"}`}
+      className={`fixed top-0 right-0 bottom-0 w-full sm:w-[500px] bg-zinc-100 border-l border-zinc-300 z-50 flex flex-col transform transition-transform duration-300 ${
+        activePanel === "cart"
+          ? "translate-x-0"
+          : "translate-x-full"
+      }`}
     >
-      <div className="px-10 flex justify-between items-center">
-        <h3 className="text-3xl font-bold text-zinc-800">Your Cart</h3>
-        <button onClick={handleClose} className="text-zinc-500 hover:text-zinc-800 text-sm font-semibold">
+      {/* Header */}
+
+      <div className="flex justify-between items-center px-8 py-6 border-b border-zinc-300">
+        <h2 className="text-3xl font-bold">
+          Your Cart
+        </h2>
+
+        <button
+          onClick={handleClose}
+          className="font-semibold text-sm hover:text-red-500"
+        >
           CLOSE
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col gap-2 overflow-y-auto no-scrollbar">
+      {/* Cart Items */}
+
+      <div className="flex-1 overflow-y-auto no-scrollbar">
         {isCartEmpty ? (
-          <div className="flex flex-col items-center justify-center h-full opacity-60">
-             <p className="text-zinc-800 text-center text-lg">Your Cart is empty</p>
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center">
+              <h3 className="text-2xl font-bold text-zinc-500">
+                Cart Is Empty
+              </h3>
+
+              <p className="text-zinc-400 mt-2">
+                Add products to continue
+              </p>
+            </div>
           </div>
         ) : (
           cart.map((product, index) => (
             <div
               key={product.id || index}
-              className={`flex items-center gap-4 px-5 py-3 border-y border-zinc-200
-              ${index % 2 === 0 ? "bg-blue-50" : "bg-white"}`}
+              className={`flex gap-4 p-5 border-b border-zinc-200 ${
+                index % 2 === 0
+                  ? "bg-white"
+                  : "bg-blue-50"
+              }`}
             >
-              <div className="w-20 h-20 bg-white rounded-md p-1 border border-zinc-100">
+              {/* Product Image */}
+
+              <div className="w-24 h-24 bg-white rounded-lg border p-2">
                 <img
                   src={product.image}
                   alt={product.name}
@@ -36,46 +77,68 @@ const Cart = ({ activePanel, handleClose, cart, removeItem, quantityIncrement, q
                 />
               </div>
 
+              {/* Product Info */}
+
               <div className="flex-1">
-                <div className="flex justify-between items-start">
-                  <h4 className="font-semibold text-zinc-800 text-md line-clamp-1">
+                <div className="flex justify-between">
+                  <h4 className="font-bold text-zinc-800">
                     {product.name}
                   </h4>
+
                   <button
-                    className="text-red-500 hover:text-red-700 transition-colors p-1"
-                    onClick={() => removeItem(product)}
+                    onClick={() =>
+                      removeItem(product)
+                    }
+                    className="text-red-500 hover:text-red-700"
                   >
-                    <FaTrash size={14} />
+                    <FaTrash />
                   </button>
                 </div>
 
-                <div className="flex justify-between items-center mt-2">
-                  <div className="flex flex-col">
-                    {product.onSale && (
-                      <span className="text-zinc-400 text-xs line-through">
-                        ₹{product.oldPrice.toFixed(2)}
-                      </span>
-                    )}
-                    <span className="text-zinc-900 font-bold">
-                      ₹{product.price.toFixed(2)}
+                <div className="mt-2">
+                  {product.onSale && (
+                    <span className="block text-xs text-zinc-400 line-through">
+                      ₹
+                      {product.oldPrice.toFixed(
+                        2
+                      )}
                     </span>
-                  </div>
+                  )}
 
-                  <div className="flex items-center gap-3 bg-zinc-200 rounded-full px-2 py-1">
-                    <button 
-                      className="w-6 h-6 bg-white rounded-full flex justify-center items-center text-zinc-600 hover:bg-blue-100 active:scale-90 transition-all"
-                      onClick={() => quantityDecrement(product)}
-                    >
-                      <FaMinus size={10} />
-                    </button>
-                    <span className="font-medium text-sm min-w-[20px] text-center">{product.quantity}</span>
-                    <button 
-                      className="w-6 h-6 bg-white rounded-full flex justify-center items-center text-zinc-600 hover:bg-blue-100 active:scale-90 transition-all"
-                      onClick={() => quantityIncrement(product)}
-                    >
-                      <FaPlus size={10} />
-                    </button>
-                  </div>
+                  <span className="font-bold text-lg">
+                    ₹
+                    {product.price.toFixed(
+                      2
+                    )}
+                  </span>
+                </div>
+
+                {/* Quantity */}
+
+                <div className="mt-3 flex items-center gap-3">
+
+                  <button
+                    onClick={() =>
+                      quantityDecrement(product)
+                    }
+                    className="w-8 h-8 rounded-full bg-white border flex items-center justify-center hover:bg-zinc-100"
+                  >
+                    <FaMinus size={10} />
+                  </button>
+
+                  <span className="font-bold min-w-[20px] text-center">
+                    {product.quantity}
+                  </span>
+
+                  <button
+                    onClick={() =>
+                      quantityIncrement(product)
+                    }
+                    className="w-8 h-8 rounded-full bg-white border flex items-center justify-center hover:bg-zinc-100"
+                  >
+                    <FaPlus size={10} />
+                  </button>
+
                 </div>
               </div>
             </div>
@@ -83,30 +146,48 @@ const Cart = ({ activePanel, handleClose, cart, removeItem, quantityIncrement, q
         )}
       </div>
 
-      <div className="px-10 space-y-2 border-t border-zinc-300 pt-4">
-        <div className="flex justify-between text-sm text-zinc-600">
-          <span>SubTotal</span>
-          <span>₹{subTotal.toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between text-sm text-zinc-600">
-          <span>Shipping Fee</span>
-          <span>₹{shippingFee.toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between pt-4 border-t border-zinc-200">
-          <span className="text-lg text-zinc-800 font-bold">Order Total</span>
-          <span className="text-lg text-blue-600 font-bold">₹{orderTotal.toFixed(2)}</span>
-        </div>
-      </div>
+      {/* Summary */}
 
-      <div className="flex px-5 pb-2 gap-3">
+      <div className="border-t border-zinc-300 p-6">
+
+        <div className="flex justify-between mb-2 text-zinc-600">
+          <span>Subtotal</span>
+          <span>
+            ₹{subTotal.toFixed(2)}
+          </span>
+        </div>
+
+        <div className="flex justify-between mb-2 text-zinc-600">
+          <span>Shipping Fee</span>
+          <span>
+            ₹{shippingFee.toFixed(2)}
+          </span>
+        </div>
+
+        <div className="flex justify-between border-t pt-4 mt-4">
+          <span className="font-bold text-lg">
+            Order Total
+          </span>
+
+          <span className="font-bold text-lg text-blue-600">
+            ₹{orderTotal.toFixed(2)}
+          </span>
+        </div>
+
         <button
-          className={`flex-[2] py-4 rounded-xl font-bold transition-all shadow-lg
-          ${isCartEmpty ? 'bg-zinc-300 cursor-not-allowed text-zinc-500' : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'}`}
-          disabled={isCartEmpty} 
-          onClick={() => setOrderSummary(true)}
+          disabled={isCartEmpty}
+          onClick={() =>
+            setOrderSummary(true)
+          }
+          className={`w-full mt-6 py-4 rounded-xl font-bold transition-all ${
+            isCartEmpty
+              ? "bg-zinc-300 text-zinc-500 cursor-not-allowed"
+              : "bg-blue-600 text-white hover:bg-blue-700"
+          }`}
         >
           Checkout
         </button>
+
       </div>
     </div>
   );

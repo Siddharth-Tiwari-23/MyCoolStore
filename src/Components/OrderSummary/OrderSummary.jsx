@@ -1,62 +1,130 @@
-import React from 'react';
+import React from "react";
 
-const OrderSummary = ({ cart, subTotal, shippingFee, orderTotal, setOrderPlaced, setOrderSummary, setCart }) => {
+const OrderSummary = ({
+  cart,
+  subTotal,
+  shippingFee,
+  orderTotal,
+  setOrderPlaced,
+  setOrderSummary,
+  setCart,
+}) => {
 
-  const handlePlaceOrder = () => {
-    setOrderSummary(false);
-    setOrderPlaced(true);
-    setCart([]);
-    localStorage.removeItem('cart'); // Clear storage once order is finalized
+  const handlePlaceOrder = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const products = cart.map((item) => ({
+        productId: item.id,
+        name: item.name,
+        image: item.image,
+        price: item.price,
+        quantity: item.quantity,
+      }));
+
+      const response = await fetch(
+        "http://localhost:5000/api/orders/place",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            products,
+            totalAmount: orderTotal,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        setOrderSummary(false);
+        setOrderPlaced(true);
+
+        setCart([]);
+
+        localStorage.removeItem("cart");
+
+        alert("Order Placed Successfully 🎉");
+      } else {
+        alert(data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      alert("Order Failed");
+    }
   };
 
   return (
-    <section className='flex justify-center items-center bg-black/80 backdrop-blur-sm fixed inset-0 z-50 px-4'>
-      <div className='bg-white p-8 w-full max-w-[550px] rounded-2xl shadow-2xl border border-zinc-200'>
-        <h2 className='text-3xl text-zinc-900 font-black mb-6 text-center tracking-tight'>Confirm Your Order</h2>
+    <section className="flex justify-center items-center bg-black/80 backdrop-blur-sm fixed inset-0 z-50 px-4">
+      <div className="bg-white p-8 w-full max-w-[550px] rounded-2xl shadow-2xl border border-zinc-200">
 
-        <div className='max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar'>
+        <h2 className="text-3xl text-zinc-900 font-black mb-6 text-center tracking-tight">
+          Confirm Your Order
+        </h2>
+
+        <div className="max-h-[40vh] overflow-y-auto pr-2">
           {cart.map((item) => (
-            <div key={item.id} className='flex justify-between items-center py-3 border-b border-zinc-100 last:border-0'>
-              <div className='flex flex-col'>
-                <span className='text-zinc-900 font-semibold'>{item.name}</span>
-                <span className='text-zinc-500 text-sm'>Qty: {item.quantity} × ₹{item.price.toFixed(2)}</span>
+            <div
+              key={item.id}
+              className="flex justify-between items-center py-3 border-b border-zinc-100"
+            >
+              <div>
+                <span className="font-semibold">
+                  {item.name}
+                </span>
+
+                <p className="text-sm text-gray-500">
+                  Qty: {item.quantity} × ₹{item.price}
+                </p>
               </div>
-              <span className='text-zinc-900 font-medium'>₹{(item.price * item.quantity).toFixed(2)}</span>
+
+              <span>
+                ₹{item.price * item.quantity}
+              </span>
             </div>
           ))}
         </div>
 
-        <div className='mt-6 space-y-3 pt-4 border-t border-zinc-200'>
-          <div className='flex justify-between text-zinc-600'>
+        <div className="mt-6 space-y-3 pt-4 border-t">
+
+          <div className="flex justify-between">
             <span>Sub Total</span>
-            <span className='font-medium'>₹{subTotal.toFixed(2)}</span>
+            <span>₹{subTotal}</span>
           </div>
 
-          <div className='flex justify-between text-zinc-600'>
-            <span>Shipping & Handling</span>
-            <span className='font-medium'>₹{shippingFee.toFixed(2)}</span>
+          <div className="flex justify-between">
+            <span>Shipping</span>
+            <span>₹{shippingFee}</span>
           </div>
 
-          <div className='flex justify-between pt-4 border-t border-zinc-200'>
-            <span className='text-zinc-900 font-bold text-xl'>Grand Total</span>
-            <span className='text-blue-600 font-black text-2xl'>₹{orderTotal.toFixed(2)}</span>
+          <div className="flex justify-between font-bold text-xl border-t pt-4">
+            <span>Total</span>
+            <span>₹{orderTotal}</span>
           </div>
+
         </div>
 
-        <div className='flex mt-8 gap-4'>
-          <button 
-            className='flex-1 py-4 text-zinc-600 font-bold hover:bg-zinc-100 rounded-xl transition-colors' 
+        <div className="flex gap-4 mt-8">
+
+          <button
             onClick={() => setOrderSummary(false)}
+            className="flex-1 py-4 border rounded-xl"
           >
-            Go Back
+            Cancel
           </button>
-          <button 
-            className='flex-1 py-4 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 active:scale-95 transition-all' 
+
+          <button
             onClick={handlePlaceOrder}
+            className="flex-1 py-4 bg-blue-600 text-white rounded-xl"
           >
-            Confirm & Pay
+            Confirm Order
           </button>
+
         </div>
+
       </div>
     </section>
   );
