@@ -23,7 +23,7 @@ const OrderSummary = ({
       }));
 
       const response = await fetch(
-        "http://localhost:5000/api/orders/place",
+        "https://mycoolstore.onrender.com/api/orders/place",
         {
           method: "POST",
           headers: {
