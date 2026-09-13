@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { products } from "../Products/ProductList";
+import { addCart } from "../../services/authService";
 
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [adding, setAdding] = useState(false);
 
   const product = products.find(
     (item) => item.id === Number(id)
@@ -18,30 +20,30 @@ const ProductDetails = () => {
     );
   }
 
-  const handleAddToCart = () => {
-    const existingCart =
-      JSON.parse(localStorage.getItem("cart")) || [];
+  const handleAddToCart = async () => {
+    const token = localStorage.getItem("token");
 
-    const alreadyExists = existingCart.find(
-      (item) => item.id === product.id
-    );
-
-    if (alreadyExists) {
-      alert("Product already in cart");
+    if (!token) {
+      alert("Please login to add items to your cart.");
+      navigate("/login");
       return;
     }
 
-    existingCart.push({
-      ...product,
-      quantity: 1,
-    });
+    setAdding(true);
+    try {
+      const response = await addCart(product.id);
 
-    localStorage.setItem(
-      "cart",
-      JSON.stringify(existingCart)
-    );
-
-    alert("Added To Cart");
+      if (response.success) {
+        alert("Added To Cart 🎉");
+      } else {
+        alert(response.message || "Failed to add item to cart.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Network error. Please try again.");
+    } finally {
+      setAdding(false);
+    }
   };
 
   return (
@@ -135,14 +137,15 @@ const ProductDetails = () => {
 
               <button
                 onClick={handleAddToCart}
-                className="bg-black text-white px-8 py-3 rounded-lg hover:bg-blue-600"
+                disabled={adding}
+                className="bg-black text-white px-8 py-3 rounded-lg hover:bg-blue-600 transition disabled:opacity-50"
               >
-                Add To Cart
+                {adding ? "Adding..." : "Add To Cart"}
               </button>
 
               <button
-                onClick={() => navigate("/profile")}
-                className="border px-8 py-3 rounded-lg hover:bg-gray-100"
+                onClick={() => navigate("/")}
+                className="border px-8 py-3 rounded-lg hover:bg-gray-100 transition"
               >
                 Continue Shopping
               </button>

@@ -176,9 +176,10 @@ const Cart = ({
 
         <button
           disabled={isCartEmpty}
-          onClick={() =>
-            setOrderSummary(true)
-          }
+          onClick={() => {
+            setOrderSummary(true);
+            handleClose();
+          }}
           className={`w-full mt-6 py-4 rounded-xl font-bold transition-all ${
             isCartEmpty
               ? "bg-zinc-300 text-zinc-500 cursor-not-allowed"

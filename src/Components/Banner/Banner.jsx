@@ -12,23 +12,25 @@ const Banner = () => {
   });
 
   useEffect(() => {
-    if (timeLeft <= 0) return;
-
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
+        if (prev <= 0) {
+          clearInterval(timer);
+          return 0;
+        }
         const newTime = prev - 1;
         if (newTime <= 0) {
           clearInterval(timer);
-          localStorage.setItem('remainingTime', 0);
+          localStorage.setItem('remainingTime', '0');
           return 0;
         }
-        localStorage.setItem('remainingTime', newTime);
+        localStorage.setItem('remainingTime', String(newTime));
         return newTime;
       });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft <= 0]);
+  }, []);
 
   const getFormattedTime = (time) => {
     const hours = Math.floor(time / 3600);

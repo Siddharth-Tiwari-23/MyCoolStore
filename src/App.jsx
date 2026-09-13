@@ -9,67 +9,46 @@ import Register from "./Components/Register/Register";
 import Home from "./Components/Home/Home";
 import ProductDetails from "./Components/ProductDetails/ProductDetails";
 import Orders from "./Components/Orders/Orders";
+import ProtectedRoute from "./Components/ProtectedRoute";
 
 function App() {
   const token = localStorage.getItem("token");
 
   return (
     <Routes>
+      {/* Public Storefront */}
+      <Route path="/" element={<Home />} />
+      <Route path="/profile" element={<Home />} />
 
+      {/* Auth Routes */}
       <Route
         path="/login"
         element={
-          token
-            ? <Navigate to="/profile" />
-            : <Login />
+          token ? <Navigate to="/" replace /> : <Login />
         }
       />
-
       <Route
         path="/register"
         element={
-          token
-            ? <Navigate to="/profile" />
-            : <Register />
+          token ? <Navigate to="/" replace /> : <Register />
         }
       />
 
-      <Route
-        path="/profile"
-        element={
-          token
-            ? <Home />
-            : <Navigate to="/login" />
-        }
-      />
+      {/* Product Details - Public */}
+      <Route path="/product/:id" element={<ProductDetails />} />
 
-      <Route
-        path="/product/:id"
-        element={
-          token
-            ? <ProductDetails />
-            : <Navigate to="/login" />
-        }
-      />
-
+      {/* Protected Routes */}
       <Route
         path="/orders"
         element={
-          token
-            ? <Orders />
-            : <Navigate to="/login" />
+          <ProtectedRoute>
+            <Orders />
+          </ProtectedRoute>
         }
       />
 
-      <Route
-        path="*"
-        element={
-          token
-            ? <Navigate to="/profile" />
-            : <Navigate to="/login" />
-        }
-      />
-
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

@@ -9,7 +9,6 @@ import orderRoutes from "./routes/orderRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 
 dotenv.config();
-console.log("Gemini Key:", process.env.GEMINI_API_KEY);
 
 connectDB();
 

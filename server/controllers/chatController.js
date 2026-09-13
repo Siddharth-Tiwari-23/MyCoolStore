@@ -3,11 +3,27 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export const chatWithBot = async (req, res) => {
   try {
-    const genAI = new GoogleGenerativeAI(
-      process.env.GEMINI_API_KEY
-    );
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({
+        success: false,
+        error: "GEMINI_API_KEY is not configured on the server",
+      });
+    }
 
     const { message } = req.body;
+
+    if (!message || typeof message !== "string" || !message.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: "A non-empty message string is required",
+      });
+    }
+
+    // Limit input length to prevent abuse and excessive token consumption
+    const sanitizedMessage = message.trim().slice(0, 500);
+
+    const genAI = new GoogleGenerativeAI(apiKey);
 
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
@@ -41,7 +57,7 @@ Regular Fit Jeans - ₹279
 Stretch Denim - ₹249
 
 User Message:
-${message}
+${sanitizedMessage}
 `;
 
 const result = await model.generateContent(prompt);

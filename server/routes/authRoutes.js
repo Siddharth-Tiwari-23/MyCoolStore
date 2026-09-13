@@ -7,7 +7,9 @@ import {
   addToWishlist,
   removeFromWishlist,
   addToCart,
+  updateCartQuantity,
   removeFromCart,
+  clearCart,
 } from "../controllers/authController.js";
 
 import authMiddleware from "../middlewares/authMiddleware.js";
@@ -38,9 +40,21 @@ router.post(
 );
 
 router.post(
+  "/cart/update",
+  authMiddleware,
+  updateCartQuantity
+);
+
+router.post(
   "/cart/remove",
   authMiddleware,
   removeFromCart
+);
+
+router.post(
+  "/cart/clear",
+  authMiddleware,
+  clearCart
 );
 
 export default router;

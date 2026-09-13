@@ -1,4 +1,3 @@
-import toast from "react-hot-toast";
 import React, { useState, useEffect } from "react";
 import Navbar from "../Navbar/Navbar";
 import Banner from "../Banner/Banner";
@@ -14,6 +13,7 @@ import {
   addWishlist,
   removeWishlist,
   addCart,
+  updateCartQuantity,
   removeCart,
 } from "../../services/authService";
 
@@ -46,40 +46,42 @@ const Home = () => {
   // LOAD USER DATA FROM DB
   // ==========================
   useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        const data = await getProfile();
+    let isMounted = true;
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-        if (!data.success) return;
+    getProfile().then((data) => {
+      if (!isMounted || !data?.success || !data?.user) return;
 
-        const dbWishlist = products.filter((product) =>
-          data.user.wishlist?.includes(String(product.id))
-        );
+      const dbWishlist = products.filter((product) =>
+        data.user.wishlist?.includes(String(product.id))
+      );
 
-        const dbCart = data.user.cart
-          ?.map((cartItem) => {
-            const product = products.find(
-              (p) => String(p.id) === cartItem.productId
-            );
+      const dbCart = data.user.cart
+        ?.map((cartItem) => {
+          const product = products.find(
+            (p) => String(p.id) === String(cartItem.productId)
+          );
 
-            if (!product) return null;
+          if (!product) return null;
 
-            return {
-              ...product,
-              quantity: cartItem.quantity,
-            };
-          })
-          .filter(Boolean);
+          return {
+            ...product,
+            quantity: cartItem.quantity || 1,
+          };
+        })
+        .filter(Boolean);
 
-        setWishlist(dbWishlist || []);
-        setCart(dbCart || []);
-      } catch (error) {
-        console.log(error);
-      }
+      setWishlist(dbWishlist || []);
+      setCart(dbCart || []);
+    }).catch((error) => {
+      console.error("Error loading user data:", error);
+    });
+
+    return () => {
+      isMounted = false;
     };
-
-    loadUserData();
-  }, []);
+  }, [activePanel]);
 
   // ==========================
   // NAVBAR SCROLL
@@ -120,6 +122,13 @@ const Home = () => {
   // CART
   // ==========================
   const addToCart = async (product) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Please login to add items to your cart.");
+      window.location.href = "/login";
+      return;
+    }
+
     const alreadyAdded = cart.find(
       (item) => item.id === product.id
     );
@@ -139,6 +148,8 @@ const Home = () => {
           quantity: 1,
         },
       ]);
+    } else {
+      alert(response.message || "Failed to add to cart");
     }
   };
 
@@ -149,39 +160,63 @@ const Home = () => {
       setCart((prev) =>
         prev.filter((item) => item.id !== product.id)
       );
+    } else {
+      alert(response.message || "Failed to remove item");
     }
   };
 
-  const quantityIncrement = (product) => {
+  const quantityIncrement = async (product) => {
+    const newQuantity = (product.quantity || 1) + 1;
+
     setCart((prev) =>
       prev.map((item) =>
         item.id === product.id
           ? {
               ...item,
-              quantity: item.quantity + 1,
+              quantity: newQuantity,
             }
           : item
       )
     );
+
+    const res = await updateCartQuantity(product.id, newQuantity);
+    if (!res.success) {
+      console.error("Failed to update cart quantity on server");
+    }
   };
 
-  const quantityDecrement = (product) => {
+  const quantityDecrement = async (product) => {
+    if (product.quantity <= 1) return;
+    const newQuantity = product.quantity - 1;
+
     setCart((prev) =>
       prev.map((item) =>
-        item.id === product.id && item.quantity > 1
+        item.id === product.id
           ? {
               ...item,
-              quantity: item.quantity - 1,
+              quantity: newQuantity,
             }
           : item
       )
     );
+
+    const res = await updateCartQuantity(product.id, newQuantity);
+    if (!res.success) {
+      console.error("Failed to update cart quantity on server");
+    }
   };
 
   // ==========================
   // WISHLIST
   // ==========================
   const addToWishlist = async (product) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Please login to manage your wishlist.");
+      window.location.href = "/login";
+      return;
+    }
+
     const exists = wishlist.some(
       (item) => item.id === product.id
     );

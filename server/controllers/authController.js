@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // ======================
 // REGISTER USER
@@ -10,19 +11,42 @@ export const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    const userExists = await User.findOne({ email });
+    if (!name || typeof name !== "string" || !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Full name is required",
+      });
+    }
+
+    if (!email || typeof email !== "string" || !EMAIL_REGEX.test(email.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid email address",
+      });
+    }
+
+    if (!password || typeof password !== "string" || password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters long",
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const userExists = await User.findOne({ email: normalizedEmail });
 
     if (userExists) {
       return res.status(400).json({
-        message: "User already exists",
+        success: false,
+        message: "User already exists with this email",
       });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
-      name,
-      email,
+      name: name.trim(),
+      email: normalizedEmail,
       password: hashedPassword,
     });
 
@@ -37,6 +61,7 @@ export const register = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({
+      success: false,
       message: error.message,
     });
   }
@@ -50,10 +75,19 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    if (!email || !password || typeof email !== "string" || typeof password !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide both email and password",
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       return res.status(400).json({
+        success: false,
         message: "Invalid credentials",
       });
     }
@@ -65,6 +99,7 @@ export const login = async (req, res) => {
 
     if (!isMatch) {
       return res.status(400).json({
+        success: false,
         message: "Invalid credentials",
       });
     }
@@ -90,6 +125,7 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({
+      success: false,
       message: error.message,
     });
   }
@@ -104,12 +140,20 @@ export const getProfile = async (req, res) => {
     const user = await User.findById(req.user.id)
       .select("-password");
 
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
     res.status(200).json({
       success: true,
       user,
     });
   } catch (error) {
     res.status(500).json({
+      success: false,
       message: error.message,
     });
   }
@@ -123,10 +167,18 @@ export const addToWishlist = async (req, res) => {
   try {
     const { productId } = req.body;
 
-    const user = await User.findById(req.user.id);
+    if (!productId) {
+      return res.status(400).json({
+        success: false,
+        message: "productId is required",
+      });
+    }
 
-    if (!user.wishlist.includes(productId)) {
-      user.wishlist.push(productId);
+    const user = await User.findById(req.user.id);
+    const prodIdStr = String(productId);
+
+    if (!user.wishlist.includes(prodIdStr)) {
+      user.wishlist.push(prodIdStr);
       await user.save();
     }
 
@@ -136,6 +188,7 @@ export const addToWishlist = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({
+      success: false,
       message: error.message,
     });
   }
@@ -148,6 +201,13 @@ export const addToWishlist = async (req, res) => {
 export const removeFromWishlist = async (req, res) => {
   try {
     const { productId } = req.body;
+
+    if (!productId) {
+      return res.status(400).json({
+        success: false,
+        message: "productId is required",
+      });
+    }
 
     const user = await User.findById(req.user.id);
 
@@ -163,6 +223,7 @@ export const removeFromWishlist = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({
+      success: false,
       message: error.message,
     });
   }
@@ -175,6 +236,13 @@ export const removeFromWishlist = async (req, res) => {
 export const addToCart = async (req, res) => {
   try {
     const { productId } = req.body;
+
+    if (!productId) {
+      return res.status(400).json({
+        success: false,
+        message: "productId is required",
+      });
+    }
 
     const user = await User.findById(req.user.id);
 
@@ -199,6 +267,57 @@ export const addToCart = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+// ======================
+// UPDATE CART QUANTITY
+// ======================
+export const updateCartQuantity = async (req, res) => {
+  try {
+    const { productId, quantity } = req.body;
+
+    if (!productId) {
+      return res.status(400).json({
+        success: false,
+        message: "productId is required",
+      });
+    }
+
+    const qty = parseInt(quantity, 10);
+    if (isNaN(qty) || qty < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Quantity must be at least 1",
+      });
+    }
+
+    const user = await User.findById(req.user.id);
+    const existingItem = user.cart.find(
+      (item) => item.productId === String(productId)
+    );
+
+    if (!existingItem) {
+      return res.status(404).json({
+        success: false,
+        message: "Item not found in cart",
+      });
+    }
+
+    existingItem.quantity = qty;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      cart: user.cart,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
       message: error.message,
     });
   }
@@ -211,6 +330,13 @@ export const addToCart = async (req, res) => {
 export const removeFromCart = async (req, res) => {
   try {
     const { productId } = req.body;
+
+    if (!productId) {
+      return res.status(400).json({
+        success: false,
+        message: "productId is required",
+      });
+    }
 
     const user = await User.findById(req.user.id);
 
@@ -226,6 +352,29 @@ export const removeFromCart = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+// ======================
+// CLEAR CART
+// ======================
+export const clearCart = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    user.cart = [];
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      cart: [],
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
       message: error.message,
     });
   }

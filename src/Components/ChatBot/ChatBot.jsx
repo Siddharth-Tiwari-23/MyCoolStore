@@ -17,15 +17,23 @@ const ChatBot = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const userName = localStorage.getItem("userName") || "User";
+  const getUserName = () => {
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      return storedUser.name || "User";
+    } catch {
+      return "User";
+    }
+  };
 
-const [messages, setMessages] = useState([
-  {
-    sender: "bot",
-    text:
-      `👋 Hi ${userName}!\nAsk me about products, deals, categories or shopping recommendations.`,
-  },
-]);
+  const userName = getUserName();
+
+  const [messages, setMessages] = useState([
+    {
+      sender: "bot",
+      text: `👋 Hi ${userName}!\nAsk me about products, deals, categories or shopping recommendations.`,
+    },
+  ]);
 
   const bottomRef = useRef(null);
 
@@ -38,7 +46,7 @@ const [messages, setMessages] = useState([
   const sendMessage = async () => {
     if (!message.trim() || loading) return;
 
-    const userMessage = message;
+    const userMessage = message.trim();
 
     setMessages((prev) => [
       ...prev,
@@ -60,16 +68,15 @@ const [messages, setMessages] = useState([
           sender: "bot",
           text:
             data.reply ||
-            "Sorry, I couldn't find anything.",
+            (data.error ? `⚠️ ${data.error}` : "Sorry, I couldn't find anything."),
         },
       ]);
-    } catch (error) {
+    } catch {
       setMessages((prev) => [
         ...prev,
         {
           sender: "bot",
-          text:
-            "❌ Server Error. Please try again.",
+          text: "❌ Server Error. Please try again.",
         },
       ]);
     }

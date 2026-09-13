@@ -1,45 +1,63 @@
-const API_URL = "https://mycoolstore.onrender.com/api/auth";
+import { API_BASE_URL } from "../config";
+
+const API_URL = `${API_BASE_URL}/api/auth`;
+
+const safeJsonFetch = async (url, options = {}) => {
+  try {
+    const response = await fetch(url, options);
+    const data = await response.json();
+    if (response.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    }
+    return {
+      ...data,
+      success: data.success !== undefined ? data.success : response.ok,
+      statusCode: response.status,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Network error. Please try again.",
+    };
+  }
+};
 
 export const registerUser = async (userData) => {
-  const response = await fetch(`${API_URL}/register`, {
+  return safeJsonFetch(`${API_URL}/register`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(userData),
   });
-
-  return await response.json();
 };
 
 export const loginUser = async (userData) => {
-  const response = await fetch(`${API_URL}/login`, {
+  return safeJsonFetch(`${API_URL}/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(userData),
   });
-
-  return await response.json();
 };
 
 export const getProfile = async () => {
   const token = localStorage.getItem("token");
+  if (!token) return { success: false, message: "No token found" };
 
-  const response = await fetch(`${API_URL}/profile`, {
+  return safeJsonFetch(`${API_URL}/profile`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
-
-  return await response.json();
 };
 
 export const addWishlist = async (productId) => {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`${API_URL}/wishlist/add`, {
+  return safeJsonFetch(`${API_URL}/wishlist/add`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -47,14 +65,12 @@ export const addWishlist = async (productId) => {
     },
     body: JSON.stringify({ productId }),
   });
-
-  return await response.json();
 };
 
 export const removeWishlist = async (productId) => {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`${API_URL}/wishlist/remove`, {
+  return safeJsonFetch(`${API_URL}/wishlist/remove`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -62,14 +78,12 @@ export const removeWishlist = async (productId) => {
     },
     body: JSON.stringify({ productId }),
   });
-
-  return await response.json();
 };
 
 export const addCart = async (productId) => {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`${API_URL}/cart/add`, {
+  return safeJsonFetch(`${API_URL}/cart/add`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -77,14 +91,25 @@ export const addCart = async (productId) => {
     },
     body: JSON.stringify({ productId }),
   });
+};
 
-  return await response.json();
+export const updateCartQuantity = async (productId, quantity) => {
+  const token = localStorage.getItem("token");
+
+  return safeJsonFetch(`${API_URL}/cart/update`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ productId, quantity }),
+  });
 };
 
 export const removeCart = async (productId) => {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`${API_URL}/cart/remove`, {
+  return safeJsonFetch(`${API_URL}/cart/remove`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -92,6 +117,22 @@ export const removeCart = async (productId) => {
     },
     body: JSON.stringify({ productId }),
   });
-
-  return await response.json();
 };
+
+export const clearCart = async () => {
+  const token = localStorage.getItem("token");
+
+  return safeJsonFetch(`${API_URL}/cart/clear`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+// Aliases for compatibility
+export const addWishlistItem = addWishlist;
+export const removeWishlistItem = removeWishlist;
+export const addCartItem = addCart;
+export const removeCartItem = removeCart;

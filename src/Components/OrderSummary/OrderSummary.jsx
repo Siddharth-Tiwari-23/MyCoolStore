@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { API_BASE_URL } from "../../config";
 
 const OrderSummary = ({
   cart,
@@ -9,13 +10,22 @@ const OrderSummary = ({
   setOrderSummary,
   setCart,
 }) => {
+  const [submitting, setSubmitting] = useState(false);
 
   const handlePlaceOrder = async () => {
+    if (submitting) return;
+
     try {
+      setSubmitting(true);
       const token = localStorage.getItem("token");
 
+      if (!token) {
+        alert("Please login to complete your order.");
+        return;
+      }
+
       const products = cart.map((item) => ({
-        productId: item.id,
+        productId: String(item.id),
         name: item.name,
         image: item.image,
         price: item.price,
@@ -23,7 +33,7 @@ const OrderSummary = ({
       }));
 
       const response = await fetch(
-        "https://mycoolstore.onrender.com/api/orders/place",
+        `${API_BASE_URL}/api/orders/place`,
         {
           method: "POST",
           headers: {
@@ -32,7 +42,6 @@ const OrderSummary = ({
           },
           body: JSON.stringify({
             products,
-            totalAmount: orderTotal,
           }),
         }
       );
@@ -42,25 +51,22 @@ const OrderSummary = ({
       if (data.success) {
         setOrderSummary(false);
         setOrderPlaced(true);
-
         setCart([]);
-
         localStorage.removeItem("cart");
-
-        alert("Order Placed Successfully 🎉");
       } else {
-        alert(data.message);
+        alert(data.message || "Unable to place order.");
       }
     } catch (error) {
-      console.log(error);
-      alert("Order Failed");
+      console.error(error);
+      alert("Order placement failed due to network error.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
     <section className="flex justify-center items-center bg-black/80 backdrop-blur-sm fixed inset-0 z-50 px-4">
       <div className="bg-white p-8 w-full max-w-[550px] rounded-2xl shadow-2xl border border-zinc-200">
-
         <h2 className="text-3xl text-zinc-900 font-black mb-6 text-center tracking-tight">
           Confirm Your Order
         </h2>

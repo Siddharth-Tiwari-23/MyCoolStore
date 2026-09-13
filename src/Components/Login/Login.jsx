@@ -25,12 +25,12 @@ function Login() {
           JSON.stringify(response.user)
         );
 
-        window.location.href = "/profile";
+        window.location.href = "/";
       } else {
-        setMessage(response.message);
+        setMessage(response.message || "Invalid credentials");
       }
-    } catch (error) {
-      setMessage("Login Failed");
+    } catch {
+      setMessage("Login Failed. Please try again.");
     }
   };
 

@@ -11,28 +11,35 @@ function Register() {
     email: "",
     password: "",
   });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+    if (error) setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
     try {
-      await registerUser(formData);
+      const response = await registerUser(formData);
 
-      alert("Registration Successful");
-
-      navigate("/login");
-    } catch (error) {
-      alert(
-        error.response?.data?.message ||
-        "Registration Failed"
-      );
+      if (response.success) {
+        alert("Registration Successful 🎉 Please login.");
+        navigate("/login");
+      } else {
+        setError(response.message || "Registration Failed");
+      }
+    } catch {
+      setError("Registration Failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -72,8 +79,14 @@ function Register() {
           required
         />
 
-        <button type="submit">
-          Register
+        {error && (
+          <p className="error" style={{ color: "red", marginTop: "10px", textAlign: "center" }}>
+            {error}
+          </p>
+        )}
+
+        <button type="submit" disabled={loading}>
+          {loading ? "Registering..." : "Register"}
         </button>
 
         <p>
