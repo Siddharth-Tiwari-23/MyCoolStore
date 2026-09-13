@@ -131,6 +131,17 @@ export const clearCart = async () => {
   });
 };
 
+export const toggleDemoRole = async () => {
+  const token = localStorage.getItem("token");
+  return safeJsonFetch(`${API_URL}/toggle-role`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
 // Aliases for compatibility
 export const addWishlistItem = addWishlist;
 export const removeWishlistItem = removeWishlist;

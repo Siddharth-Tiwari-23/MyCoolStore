@@ -63,6 +63,7 @@ export const register = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
       },
     });
   } catch (error) {
@@ -133,6 +134,7 @@ export const login = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
       },
     });
   } catch (error) {
@@ -383,6 +385,42 @@ export const clearCart = async (req, res) => {
     res.status(200).json({
       success: true,
       cart: [],
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+// ======================
+// TOGGLE DEMO ROLE (USER <-> ADMIN)
+// ======================
+export const toggleRole = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    user.role = user.role === "admin" ? "user" : "admin";
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Role switched to ${user.role}`,
+      role: user.role,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
     });
   } catch (error) {
     res.status(500).json({

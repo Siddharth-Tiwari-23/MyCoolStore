@@ -16,10 +16,11 @@ import {
   updateCartQuantity,
   removeCart,
 } from "../../services/authService";
-
-import { products } from "../Products/ProductList";
+import { fetchProducts } from "../../services/productService";
+import { products as fallbackProducts } from "../Products/ProductList";
 
 const Home = () => {
+  const [allProducts, setAllProducts] = useState(fallbackProducts);
   const [searchTerm, setSearchTerm] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
   const [activePanel, setActivePanel] = useState(null);
@@ -43,6 +44,17 @@ const Home = () => {
   const orderTotal = subTotal + shippingFee;
 
   // ==========================
+  // FETCH DYNAMIC CATALOG
+  // ==========================
+  useEffect(() => {
+    fetchProducts().then((res) => {
+      if (res?.success && Array.isArray(res.products) && res.products.length > 0) {
+        setAllProducts(res.products);
+      }
+    });
+  }, []);
+
+  // ==========================
   // LOAD USER DATA FROM DB
   // ==========================
   useEffect(() => {
@@ -53,20 +65,21 @@ const Home = () => {
     getProfile().then((data) => {
       if (!isMounted || !data?.success || !data?.user) return;
 
-      const dbWishlist = products.filter((product) =>
-        data.user.wishlist?.includes(String(product.id))
+      const dbWishlist = allProducts.filter((product) =>
+        data.user.wishlist?.includes(String(product.id || product._id))
       );
 
       const dbCart = data.user.cart
         ?.map((cartItem) => {
-          const product = products.find(
-            (p) => String(p.id) === String(cartItem.productId)
+          const product = allProducts.find(
+            (p) => String(p.id || p._id) === String(cartItem.productId)
           );
 
           if (!product) return null;
 
           return {
             ...product,
+            id: product.id || product._id,
             quantity: cartItem.quantity || 1,
           };
         })
@@ -81,7 +94,7 @@ const Home = () => {
     return () => {
       isMounted = false;
     };
-  }, [activePanel]);
+  }, [activePanel, allProducts]);
 
   // ==========================
   // NAVBAR SCROLL
@@ -262,6 +275,7 @@ const Home = () => {
       <Banner />
 
       <Products
+        products={allProducts}
         searchTerm={searchTerm}
         addToCart={addToCart}
         addToWishlist={addToWishlist}

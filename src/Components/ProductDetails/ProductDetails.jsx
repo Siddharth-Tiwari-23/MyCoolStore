@@ -1,20 +1,48 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { products } from "../Products/ProductList";
 import { addCart } from "../../services/authService";
+import { API_BASE_URL } from "../../config";
 
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [adding, setAdding] = useState(false);
 
-  const product = products.find(
-    (item) => item.id === Number(id)
-  );
+  const [product, setProduct] = useState(() => {
+    return (
+      products.find(
+        (item) => String(item.id) === String(id) || String(item._id) === String(id)
+      ) || null
+    );
+  });
+  const [loading, setLoading] = useState(!product);
+
+  useEffect(() => {
+    if (!product) {
+      fetch(`${API_BASE_URL}/api/products/${id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.product) {
+            setProduct(data.product);
+          }
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }
+  }, [id, product]);
+
+  if (loading) {
+    return (
+      <div className="text-center mt-20 text-xl text-gray-500">
+        Loading product details...
+      </div>
+    );
+  }
 
   if (!product) {
     return (
-      <div className="text-center mt-20 text-2xl">
+      <div className="text-center mt-20 text-2xl font-bold text-gray-700">
         Product Not Found
       </div>
     );
@@ -31,7 +59,8 @@ const ProductDetails = () => {
 
     setAdding(true);
     try {
-      const response = await addCart(product.id);
+      const productId = product._id || product.id;
+      const response = await addCart(productId);
 
       if (response.success) {
         alert("Added To Cart 🎉");

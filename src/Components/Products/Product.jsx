@@ -4,6 +4,7 @@ import { GoHeartFill } from "react-icons/go";
 import { useNavigate } from "react-router-dom";
 
 const Products = ({
+  products: productList = products,
   searchTerm,
   addToCart,
   addToWishlist,
@@ -23,7 +24,7 @@ const Products = ({
   const [activeTab, setActiveTab] = useState("All");
 
   const filteredItems = useMemo(() => {
-    return products.filter((item) => {
+    return productList.filter((item) => {
       const matchesCategory =
         activeTab === "All" ||
         (activeTab === "New Arrivals" &&
@@ -39,7 +40,7 @@ const Products = ({
 
       return matchesCategory && matchesSearch;
     });
-  }, [activeTab, searchTerm]);
+  }, [activeTab, searchTerm, productList]);
 
   return (
     <section

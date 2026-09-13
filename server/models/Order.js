@@ -30,8 +30,48 @@ const orderSchema = new mongoose.Schema(
         "Processing",
         "Shipped",
         "Delivered",
+        "Cancelled",
       ],
       default: "Pending",
+    },
+
+    statusTimeline: [
+      {
+        status: {
+          type: String,
+          required: true,
+        },
+        timestamp: {
+          type: Date,
+          default: Date.now,
+        },
+        note: {
+          type: String,
+          default: "",
+        },
+      },
+    ],
+
+    paymentMethod: {
+      type: String,
+      enum: ["COD", "Razorpay"],
+      default: "COD",
+    },
+
+    paymentStatus: {
+      type: String,
+      enum: ["Pending", "Completed", "Failed"],
+      default: "Pending",
+    },
+
+    razorpayOrderId: {
+      type: String,
+      default: null,
+    },
+
+    razorpayPaymentId: {
+      type: String,
+      default: null,
     },
   },
   {

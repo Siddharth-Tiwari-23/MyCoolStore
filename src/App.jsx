@@ -10,6 +10,8 @@ import Home from "./Components/Home/Home";
 import ProductDetails from "./Components/ProductDetails/ProductDetails";
 import Orders from "./Components/Orders/Orders";
 import ProtectedRoute from "./Components/ProtectedRoute";
+import AdminDashboard from "./Components/Admin/AdminDashboard";
+import AdminRoute from "./Components/Admin/AdminRoute";
 
 function App() {
   const token = localStorage.getItem("token");
@@ -44,6 +46,16 @@ function App() {
           <ProtectedRoute>
             <Orders />
           </ProtectedRoute>
+        }
+      />
+
+      {/* Admin Portal */}
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
         }
       />
 
