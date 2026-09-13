@@ -33,7 +33,13 @@ export const register = async (req, res) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const userExists = await User.findOne({ email: normalizedEmail });
+    const escapedEmail = email.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const userExists = await User.findOne({
+      $or: [
+        { email: normalizedEmail },
+        { email: { $regex: new RegExp(`^${escapedEmail}$`, "i") } },
+      ],
+    });
 
     if (userExists) {
       return res.status(400).json({
@@ -83,7 +89,13 @@ export const login = async (req, res) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const user = await User.findOne({ email: normalizedEmail });
+    const escapedEmail = email.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const user = await User.findOne({
+      $or: [
+        { email: normalizedEmail },
+        { email: { $regex: new RegExp(`^${escapedEmail}$`, "i") } },
+      ],
+    });
 
     if (!user) {
       return res.status(400).json({

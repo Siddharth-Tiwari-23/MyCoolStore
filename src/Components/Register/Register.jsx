@@ -13,6 +13,7 @@ function Register() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [statusNote, setStatusNote] = useState("");
 
   const handleChange = (e) => {
     setFormData({
@@ -27,6 +28,10 @@ function Register() {
     setError("");
     setLoading(true);
 
+    const timer = setTimeout(() => {
+      setStatusNote("Connecting to backend (Render may take up to 45s on first visit to wake up)...");
+    }, 2500);
+
     try {
       const response = await registerUser(formData);
 
@@ -39,6 +44,8 @@ function Register() {
     } catch {
       setError("Registration Failed. Please try again.");
     } finally {
+      clearTimeout(timer);
+      setStatusNote("");
       setLoading(false);
     }
   };
@@ -88,6 +95,10 @@ function Register() {
         <button type="submit" disabled={loading}>
           {loading ? "Registering..." : "Register"}
         </button>
+
+        {statusNote && (
+          <p className="status-notice">{statusNote}</p>
+        )}
 
         <p>
           Already have an account?{" "}

@@ -7,13 +7,21 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [statusNote, setStatusNote] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage("");
+    setLoading(true);
+
+    const timer = setTimeout(() => {
+      setStatusNote("Connecting to backend (Render may take up to 45s on first visit to wake up)...");
+    }, 2500);
 
     try {
       const response = await loginUser({
-        email,
+        email: email.trim(),
         password,
       });
 
@@ -31,6 +39,10 @@ function Login() {
       }
     } catch {
       setMessage("Login Failed. Please try again.");
+    } finally {
+      clearTimeout(timer);
+      setStatusNote("");
+      setLoading(false);
     }
   };
 
@@ -47,6 +59,7 @@ function Login() {
             value={email}
             onChange={(e)=>setEmail(e.target.value)}
             required
+            disabled={loading}
           />
 
           <input
@@ -55,12 +68,17 @@ function Login() {
             value={password}
             onChange={(e)=>setPassword(e.target.value)}
             required
+            disabled={loading}
           />
 
-          <button type="submit">
-            Login
+          <button type="submit" disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
+
+        {statusNote && (
+          <p className="status-notice">{statusNote}</p>
+        )}
 
         {message && (
           <p className="error">{message}</p>

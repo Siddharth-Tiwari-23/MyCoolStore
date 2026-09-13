@@ -1,15 +1,15 @@
-import Jeans from '../../assets/jeans.png';
-import Hoodie from '../../assets/hoodie.png';
-import LeatherJacket from '../../assets/leather-jacket.png';
-import Skirt from '../../assets/skirt.png';
-import TShirt from '../../assets/tshirt.png';
-import Sleepsuit from '../../assets/sleepsuit.png';
-import Shirt from '../../assets/shirt.png';
-import Dress from '../../assets/dress.png';
-import Skater from '../../assets/skater.png';
-import Sweater from '../../assets/sweater.png';
-import BabyShirt from '../../assets/baby-shirt.png';
-import ShirtDress from '../../assets/shirt-dress.png';
+import Jeans from '../../assets/jeans.webp';
+import Hoodie from '../../assets/hoodie.webp';
+import LeatherJacket from '../../assets/leather-jacket.webp';
+import Skirt from '../../assets/skirt.webp';
+import TShirt from '../../assets/tshirt.webp';
+import Sleepsuit from '../../assets/sleepsuit.webp';
+import Shirt from '../../assets/shirt.webp';
+import Dress from '../../assets/dress.webp';
+import Skater from '../../assets/skater.webp';
+import Sweater from '../../assets/sweater.webp';
+import BabyShirt from '../../assets/baby-shirt.webp';
+import ShirtDress from '../../assets/shirt-dress.webp';
 
 export const products = [
   {

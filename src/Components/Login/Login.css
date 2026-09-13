@@ -43,6 +43,22 @@
     background:#1d4ed8;
 }
 
+.auth-card button:disabled{
+    background:#93c5fd;
+    cursor:not-allowed;
+}
+
+.status-notice{
+    color:#d97706;
+    background:#fef3c7;
+    border:1px solid #fde68a;
+    padding:8px 12px;
+    border-radius:6px;
+    font-size:13px;
+    text-align:center;
+    margin-top:12px;
+}
+
 .error{
     color:red;
     text-align:center;
