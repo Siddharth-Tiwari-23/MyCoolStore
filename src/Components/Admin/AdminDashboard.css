@@ -46,22 +46,6 @@
   align-items: center;
 }
 
-.btn-demo-toggle {
-  background: #fef3c7;
-  color: #b45309;
-  border: 1px solid #fde68a;
-  padding: 0.45rem 0.85rem;
-  font-size: 0.825rem;
-  font-weight: 600;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-demo-toggle:hover {
-  background: #fde68a;
-}
-
 .btn-secondary {
   text-decoration: none;
   font-size: 0.85rem;
@@ -174,36 +158,9 @@
   margin: 0.25rem 0 0 0;
 }
 
-.interview-note-box {
+.overview-recent-section {
   grid-column: 1 / -1;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-top: 1rem;
-}
-
-.interview-note-box h4 {
-  margin: 0 0 0.75rem 0;
-  color: #166534;
-  font-size: 1.05rem;
-}
-
-.interview-note-box ul {
-  margin: 0;
-  padding-left: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  color: #14532d;
-  font-size: 0.9rem;
-}
-
-.interview-note-box code {
-  background: #dcfce7;
-  padding: 0.15rem 0.35rem;
-  border-radius: 4px;
-  font-family: monospace;
+  margin-top: 1.5rem;
 }
 
 /* Products & Orders View */

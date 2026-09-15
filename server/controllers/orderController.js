@@ -208,16 +208,16 @@ export const createRazorpayOrder = async (req, res) => {
       });
     }
 
-    // Sandbox / Interview Demo Mock Order
+    // Sandbox / Test Mode Order
     const mockOrderId = `order_${crypto.randomBytes(8).toString("hex")}`;
     res.status(200).json({
       success: true,
       orderId: mockOrderId,
       amount: Math.round(amount * 100),
       currency: "INR",
-      keyId: "rzp_test_demo_key",
+      keyId: "rzp_test_key",
       isDemoMode: true,
-      message: "Sandbox test order generated for demo/interview",
+      message: "Test order initialized",
     });
   } catch (error) {
     res.status(500).json({

@@ -92,8 +92,8 @@ const Orders = () => {
             ← Back to Store
           </button>
           <div className="text-center">
-            <h1 className="text-3xl font-extrabold text-slate-900">My Orders & Tracking</h1>
-            <p className="text-sm text-slate-500 mt-1">Live order state machine & tracking</p>
+            <h1 className="text-3xl font-extrabold text-slate-900">My Orders</h1>
+            <p className="text-sm text-slate-500 mt-1">Track and manage your recent orders</p>
           </div>
           <button
             onClick={fetchOrders}
@@ -107,7 +107,7 @@ const Orders = () => {
         {loading ? (
           <div className="bg-white rounded-2xl shadow-sm p-12 text-center border border-slate-200">
             <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-            <p className="text-slate-500 font-medium">Loading your orders & live tracking...</p>
+            <p className="text-slate-500 font-medium">Loading your orders...</p>
           </div>
         ) : orders.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm p-12 text-center border border-slate-200">
@@ -167,7 +167,7 @@ const Orders = () => {
                 {/* Tracking Stepper Progress Bar */}
                 <div className="my-8 px-2">
                   <h4 className="text-xs uppercase font-bold tracking-wider text-slate-400 mb-6">
-                    Live Tracking Status
+                    Delivery Status
                   </h4>
 
                   {isCancelled ? (

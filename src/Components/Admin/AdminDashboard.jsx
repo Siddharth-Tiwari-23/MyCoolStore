@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   fetchProducts,
   createProduct,
@@ -7,11 +7,9 @@ import {
   deleteProduct,
 } from "../../services/productService";
 import { getAllOrders, updateOrderStatus } from "../../services/orderService";
-import { toggleDemoRole } from "../../services/authService";
 import "./AdminDashboard.css";
 
 function AdminDashboard() {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
 
   const [products, setProducts] = useState([]);
@@ -139,32 +137,16 @@ function AdminDashboard() {
     }
   };
 
-  const handleToggleDemoRole = async () => {
-    try {
-      const res = await toggleDemoRole();
-      if (res.success) {
-        localStorage.setItem("user", JSON.stringify(res.user));
-        alert(`Demo Role switched to: ${res.role.toUpperCase()}. Redirecting to storefront.`);
-        navigate("/");
-      }
-    } catch (err) {
-      alert(err.message || "Failed to toggle role");
-    }
-  };
-
   return (
     <div className="admin-container">
       {/* Top Navbar */}
       <header className="admin-header">
         <div className="admin-brand">
           <h2>MyCoolStore <span>Admin</span></h2>
-          <span className="role-badge">RBAC: Admin Role</span>
+          <span className="role-badge">Administrator</span>
         </div>
 
         <div className="admin-header-actions">
-          <button onClick={handleToggleDemoRole} className="btn-demo-toggle" title="Switch between Admin and Customer">
-            🔄 Switch to Customer (Demo)
-          </button>
           <Link to="/" className="btn-secondary">
             ← View Storefront
           </Link>
@@ -237,14 +219,59 @@ function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Quick Info Box for Interviewers */}
-              <div className="interview-note-box">
-                <h4>💡 SDE-1 Engineering Architecture Notes</h4>
-                <ul>
-                  <li><strong>Role-Based Access Control (RBAC):</strong> Admin endpoints are guarded by <code>adminMiddleware</code> on the server, returning <code>403 Forbidden</code> for unauthorized users.</li>
-                  <li><strong>Concurrency-Safe Inventory:</strong> When an order is placed, stock is atomically decremented with <code>$inc: -qty</code> and <code>$gte: qty</code> in MongoDB to prevent race conditions.</li>
-                  <li><strong>Live Order State Machine:</strong> Status transitions update the customer order tracking stepper in real time.</li>
-                </ul>
+              {/* Recent Orders Overview */}
+              <div className="overview-recent-section">
+                <div className="section-header">
+                  <div>
+                    <h3>Recent Orders</h3>
+                    <p className="section-subtitle">Latest customer purchases and current delivery statuses.</p>
+                  </div>
+                  <button
+                    className="btn-secondary"
+                    onClick={() => setActiveTab("orders")}
+                  >
+                    View All Orders →
+                  </button>
+                </div>
+
+                {orders.length === 0 ? (
+                  <div className="empty-state">No orders received yet.</div>
+                ) : (
+                  <div className="table-wrapper">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Order ID</th>
+                          <th>Customer</th>
+                          <th>Items</th>
+                          <th>Total</th>
+                          <th>Payment</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders.slice(0, 5).map((ord) => (
+                          <tr key={ord._id}>
+                            <td className="code-text">#{ord._id.slice(-6).toUpperCase()}</td>
+                            <td>{ord.user?.name || "Customer"}</td>
+                            <td>{ord.products?.length || 0} item(s)</td>
+                            <td className="font-bold">₹{ord.totalAmount}</td>
+                            <td>
+                              <span className={`payment-pill ${ord.paymentMethod === "Razorpay" ? "online" : "cod"}`}>
+                                {ord.paymentMethod || "COD"}
+                              </span>
+                            </td>
+                            <td>
+                              <span className={`status-pill status-${(ord.orderStatus || "Pending").toLowerCase()}`}>
+                                {ord.orderStatus || "Pending"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           )}

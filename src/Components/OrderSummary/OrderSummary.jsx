@@ -70,14 +70,14 @@ const OrderSummary = ({
           }
           razorpayPaymentId = paymentResult.razorpay_payment_id;
         } else {
-          // Sandbox / Interview Demo Mock Payment
+          // Razorpay Sandbox Checkout
           const confirmPayment = window.confirm(
-            `[Razorpay Test Gateway Sandbox]\nAmount: ₹${orderTotal}\nOrder ID: ${razorpayOrderId}\n\nClick OK to simulate successful payment authorization.`
+            `Razorpay Checkout (Test Mode)\n\nOrder Total: ₹${orderTotal}\nOrder ID: ${razorpayOrderId}\n\nClick OK to complete payment.`
           );
           if (!confirmPayment) {
-            throw new Error("Payment cancelled in sandbox");
+            throw new Error("Payment was cancelled");
           }
-          razorpayPaymentId = `pay_mock_${Date.now()}`;
+          razorpayPaymentId = `pay_rzp_${Date.now()}`;
         }
       }
 

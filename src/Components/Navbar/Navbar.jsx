@@ -8,7 +8,6 @@ import {
 } from "react-icons/fa";
 
 import { useNavigate } from "react-router-dom";
-import { toggleDemoRole } from "../../services/authService";
 
 const Navbar = ({
   handleScroll,
@@ -30,19 +29,6 @@ const Navbar = ({
   }
   const userName = currentUser?.name || "Guest";
   const isAdmin = currentUser?.role === "admin";
-
-  const handleToggleRole = async () => {
-    try {
-      const res = await toggleDemoRole();
-      if (res.success) {
-        localStorage.setItem("user", JSON.stringify(res.user));
-        alert(`Demo Role switched to: ${res.role.toUpperCase()}`);
-        window.location.reload();
-      }
-    } catch {
-      alert("Failed to toggle demo role");
-    }
-  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -133,20 +119,12 @@ const Navbar = ({
                 My Orders
               </button>
 
-              {isAdmin ? (
+              {isAdmin && (
                 <button
                   onClick={() => navigate("/admin")}
-                  className="hidden sm:inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1 rounded-full text-xs font-bold hover:bg-amber-200 transition"
+                  className="hidden sm:inline-flex items-center gap-1.5 bg-slate-900 text-white px-3 py-1 rounded-full text-xs font-semibold hover:bg-blue-600 transition shadow-sm"
                 >
-                  ⚙️ Admin Portal
-                </button>
-              ) : (
-                <button
-                  onClick={handleToggleRole}
-                  className="hidden lg:inline-flex items-center gap-1 bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-0.5 rounded-full text-[11px] font-semibold hover:bg-slate-200 transition"
-                  title="Toggle Admin role for demo"
-                >
-                  Demo: Make Admin
+                  Admin Portal
                 </button>
               )}
 
@@ -244,26 +222,16 @@ const Navbar = ({
               >
                 My Orders
               </button>
-              {isAdmin ? (
+              {isAdmin && (
                 <button
                   onClick={() => {
                     navigate("/admin");
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left font-bold text-amber-700 py-2 border-b flex items-center justify-between"
+                  className="text-left font-semibold text-slate-800 py-2 border-b flex items-center justify-between"
                 >
-                  <span>⚙️ Admin Portal</span>
-                  <span className="text-xs bg-amber-100 px-2 py-0.5 rounded">Admin</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    handleToggleRole();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="text-left text-xs font-semibold text-slate-500 py-2 border-b"
-                >
-                  🔄 Demo: Switch to Admin Role
+                  <span>Admin Portal</span>
+                  <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Staff</span>
                 </button>
               )}
               <button
