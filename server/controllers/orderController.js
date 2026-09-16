@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import Razorpay from "razorpay";
 import Order from "../models/Order.js";
 import User from "../models/User.js";
 import Product from "../models/Product.js";
@@ -178,46 +179,37 @@ export const createRazorpayOrder = async (req, res) => {
     const keyId = process.env.RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
-    // If real keys are present, use live Razorpay API, otherwise generate sandboxed order
+    // If real keys are present, use live Razorpay SDK
     if (keyId && keySecret) {
-      const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
-      const response = await fetch("https://api.razorpay.com/v1/orders", {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${auth}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          amount: Math.round(amount * 100), // amount in paise
-          currency: "INR",
-          receipt: `rcpt_${Date.now()}`,
-        }),
+      const razorpay = new Razorpay({
+        key_id: keyId,
+        key_secret: keySecret,
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error?.description || "Failed to create Razorpay order");
-      }
+      const order = await razorpay.orders.create({
+        amount: Math.round(amount * 100), // amount in paise
+        currency: "INR",
+        receipt: `rcpt_${Date.now()}`,
+      });
 
       return res.status(200).json({
         success: true,
-        orderId: data.id,
-        amount: data.amount,
-        currency: data.currency,
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency,
         keyId,
       });
     }
 
-    // Sandbox / Test Mode Order
-    const mockOrderId = `order_${crypto.randomBytes(8).toString("hex")}`;
+    // Default test key: enables the official Razorpay Checkout popup in test mode
+    const defaultTestKey = process.env.RAZORPAY_KEY_ID || "rzp_test_1DP5mmOlF5G5ag";
     res.status(200).json({
       success: true,
-      orderId: mockOrderId,
+      orderId: null, // orderId is optional when initializing test checkout
       amount: Math.round(amount * 100),
       currency: "INR",
-      keyId: "rzp_test_key",
-      isDemoMode: true,
-      message: "Test order initialized",
+      keyId: defaultTestKey,
+      message: "Ready for payment",
     });
   } catch (error) {
     res.status(500).json({
@@ -234,17 +226,16 @@ export const verifyRazorpayPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
-    if (!razorpay_order_id || !razorpay_payment_id) {
+    if (!razorpay_payment_id) {
       return res.status(400).json({
         success: false,
-        message: "Missing payment verification parameters",
+        message: "Payment ID is required for verification",
       });
     }
 
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
-    if (keySecret && razorpay_signature) {
-      // Standard HMAC-SHA256 signature verification
+    if (keySecret && razorpay_order_id && razorpay_signature) {
       const expectedSignature = crypto
         .createHmac("sha256", keySecret)
         .update(`${razorpay_order_id}|${razorpay_payment_id}`)
@@ -263,7 +254,7 @@ export const verifyRazorpayPayment = async (req, res) => {
       verified: true,
       message: "Payment verified successfully",
       paymentId: razorpay_payment_id,
-      orderId: razorpay_order_id,
+      orderId: razorpay_order_id || null,
     });
   } catch (error) {
     res.status(500).json({

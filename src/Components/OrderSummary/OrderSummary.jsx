@@ -2,6 +2,21 @@ import { useState } from "react";
 import { API_BASE_URL } from "../../config";
 import { createRazorpayOrder, verifyRazorpayPayment } from "../../services/orderService";
 
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 const OrderSummary = ({
   cart,
   subTotal,
@@ -31,53 +46,61 @@ const OrderSummary = ({
       let razorpayPaymentId = null;
       let razorpayOrderId = null;
 
-      // Online Payment Flow (Razorpay / Test Sandbox)
+      // Online Payment Flow (Razorpay)
       if (paymentMethod === "Razorpay") {
-        setStatusMessage("Initiating secure Razorpay checkout...");
-        const rzpOrder = await createRazorpayOrder(orderTotal);
+        setStatusMessage("Connecting to Razorpay gateway...");
+        const isLoaded = await loadRazorpayScript();
+        if (!isLoaded || !window.Razorpay) {
+          throw new Error("Unable to load Razorpay payment gateway. Please check your internet connection.");
+        }
 
+        const rzpOrder = await createRazorpayOrder(orderTotal);
         if (!rzpOrder.success) {
           throw new Error(rzpOrder.message || "Failed to initialize payment gateway");
         }
 
-        razorpayOrderId = rzpOrder.orderId;
+        razorpayOrderId = rzpOrder.orderId || null;
 
-        // Check if Razorpay script is present, otherwise run demo sandbox verification
-        if (window.Razorpay && !rzpOrder.isDemoMode) {
-          const paymentResult = await new Promise((resolve, reject) => {
-            const options = {
-              key: rzpOrder.keyId,
-              amount: rzpOrder.amount,
-              currency: rzpOrder.currency || "INR",
-              name: "MyCoolStore",
-              description: "Order Payment",
-              order_id: rzpOrder.orderId,
-              handler: (res) => resolve(res),
-              modal: {
-                ondismiss: () => reject(new Error("Payment cancelled by user")),
-              },
-              theme: { color: "#2563eb" },
-            };
-            const rzp = new window.Razorpay(options);
-            rzp.open();
+        const paymentResult = await new Promise((resolve, reject) => {
+          const options = {
+            key: rzpOrder.keyId || "rzp_test_1DP5mmOlF5G5ag",
+            amount: rzpOrder.amount || Math.round(orderTotal * 100),
+            currency: rzpOrder.currency || "INR",
+            name: "MyCoolStore",
+            description: "Order Checkout",
+            image: "/logo.png",
+            handler: (res) => resolve(res),
+            modal: {
+              ondismiss: () => reject(new Error("Payment cancelled by user")),
+            },
+            prefill: {
+              name: localStorage.getItem("userName") || "Valued Customer",
+              email: localStorage.getItem("userEmail") || "customer@example.com",
+              contact: "9999999999",
+            },
+            theme: { color: "#2563eb" },
+          };
+
+          if (rzpOrder.orderId) {
+            options.order_id = rzpOrder.orderId;
+          }
+
+          const rzp = new window.Razorpay(options);
+          rzp.on("payment.failed", (response) => {
+            reject(new Error(response?.error?.description || "Payment transaction failed"));
           });
+          rzp.open();
+        });
 
-          // Cryptographic verification
-          setStatusMessage("Verifying cryptographic payment signature...");
-          const verifyRes = await verifyRazorpayPayment(paymentResult);
-          if (!verifyRes.success) {
-            throw new Error("Payment signature verification failed");
-          }
-          razorpayPaymentId = paymentResult.razorpay_payment_id;
-        } else {
-          // Razorpay Sandbox Checkout
-          const confirmPayment = window.confirm(
-            `Razorpay Checkout (Test Mode)\n\nOrder Total: ₹${orderTotal}\nOrder ID: ${razorpayOrderId}\n\nClick OK to complete payment.`
-          );
-          if (!confirmPayment) {
-            throw new Error("Payment was cancelled");
-          }
-          razorpayPaymentId = `pay_rzp_${Date.now()}`;
+        // Cryptographic verification
+        setStatusMessage("Verifying payment...");
+        const verifyRes = await verifyRazorpayPayment(paymentResult);
+        if (!verifyRes.success) {
+          throw new Error(verifyRes.message || "Payment verification failed");
+        }
+        razorpayPaymentId = paymentResult.razorpay_payment_id;
+        if (paymentResult.razorpay_order_id) {
+          razorpayOrderId = paymentResult.razorpay_order_id;
         }
       }
 
