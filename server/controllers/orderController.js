@@ -176,10 +176,10 @@ export const createRazorpayOrder = async (req, res) => {
       });
     }
 
-    const keyId = process.env.RAZORPAY_KEY_ID;
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const keyId = process.env.RAZORPAY_KEY_ID || "rzp_test_TcobLbTXtDGGCZ";
+    const keySecret = process.env.RAZORPAY_KEY_SECRET || "EfAFpa1M9ft39jU603jfO26g";
 
-    // If real keys are present, use live Razorpay SDK
+    // Use live Razorpay SDK
     if (keyId && keySecret) {
       const razorpay = new Razorpay({
         key_id: keyId,
@@ -201,17 +201,6 @@ export const createRazorpayOrder = async (req, res) => {
         hasRealGateway: true,
       });
     }
-
-    // When keys are not yet configured in server environment, use realistic payment gateway simulator
-    res.status(200).json({
-      success: true,
-      orderId: `order_sim_${Date.now()}`,
-      amount: Math.round(amount * 100),
-      currency: "INR",
-      keyId: keyId || null,
-      hasRealGateway: false,
-      message: "Ready for payment",
-    });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -234,7 +223,7 @@ export const verifyRazorpayPayment = async (req, res) => {
       });
     }
 
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET || "EfAFpa1M9ft39jU603jfO26g";
 
     if (keySecret && razorpay_order_id && razorpay_signature) {
       const expectedSignature = crypto
