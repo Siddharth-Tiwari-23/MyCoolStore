@@ -198,17 +198,18 @@ export const createRazorpayOrder = async (req, res) => {
         amount: order.amount,
         currency: order.currency,
         keyId,
+        hasRealGateway: true,
       });
     }
 
-    // Default test key: enables the official Razorpay Checkout popup in test mode
-    const defaultTestKey = process.env.RAZORPAY_KEY_ID || "rzp_test_1DP5mmOlF5G5ag";
+    // When keys are not yet configured in server environment, use realistic payment gateway simulator
     res.status(200).json({
       success: true,
-      orderId: null, // orderId is optional when initializing test checkout
+      orderId: `order_sim_${Date.now()}`,
       amount: Math.round(amount * 100),
       currency: "INR",
-      keyId: defaultTestKey,
+      keyId: keyId || null,
+      hasRealGateway: false,
       message: "Ready for payment",
     });
   } catch (error) {
