@@ -72,12 +72,16 @@ const orderSchema = new mongoose.Schema(
     razorpayPaymentId: {
       type: String,
       default: null,
+      sparse: true,
+      index: true,
     },
   },
   {
     timestamps: true,
   }
 );
+
+orderSchema.index({ razorpayPaymentId: 1 }, { unique: true, sparse: true });
 
 export default mongoose.model(
   "Order",

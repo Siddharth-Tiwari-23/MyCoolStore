@@ -26,11 +26,17 @@ export const getMyOrders = async () => {
   return response.json();
 };
 
-export const createRazorpayOrder = async (amount) => {
+export const createRazorpayOrder = async (productsOrAmount) => {
+  const payload = Array.isArray(productsOrAmount)
+    ? { products: productsOrAmount }
+    : typeof productsOrAmount === "object" && productsOrAmount !== null
+    ? productsOrAmount
+    : { amount: productsOrAmount };
+
   const response = await fetch(`${API_URL}/razorpay-create`, {
     method: "POST",
     headers: getAuthHeaders(),
-    body: JSON.stringify({ amount }),
+    body: JSON.stringify(payload),
   });
   return response.json();
 };

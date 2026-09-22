@@ -10,7 +10,13 @@ import { getProductById as getCatalogProductById } from "../data/products.js";
 // ======================
 export const placeOrder = async (req, res) => {
   try {
-    const { products, paymentMethod = "COD", razorpayOrderId = null, razorpayPaymentId = null } = req.body;
+    const {
+      products,
+      paymentMethod = "COD",
+      razorpayOrderId = null,
+      razorpayPaymentId = null,
+      razorpaySignature = null,
+    } = req.body;
 
     if (!Array.isArray(products) || products.length === 0) {
       return res.status(400).json({
@@ -19,9 +25,10 @@ export const placeOrder = async (req, res) => {
       });
     }
 
+    // Step 1: Authoritative catalog validation and stock check before modifying any state
     let subTotal = 0;
     let totalItems = 0;
-    const verifiedProducts = [];
+    const validatedItems = [];
 
     for (const item of products) {
       const quantity = parseInt(item.quantity, 10);
@@ -32,7 +39,7 @@ export const placeOrder = async (req, res) => {
         });
       }
 
-      // Look up product in MongoDB first, then fallback to authoritative catalog
+      // Authoritative lookup: MongoDB first, fallback to static catalog
       let dbProduct = null;
       if (item.productId && item.productId.match(/^[0-9a-fA-F]{24}$/)) {
         dbProduct = await Product.findById(item.productId);
@@ -47,25 +54,16 @@ export const placeOrder = async (req, res) => {
       let image = item.image || "";
 
       if (dbProduct) {
+        if (dbProduct.stock < quantity) {
+          return res.status(400).json({
+            success: false,
+            message: `Insufficient stock for ${dbProduct.name}. Only ${dbProduct.stock} items remaining.`,
+          });
+        }
         price = dbProduct.price;
         name = dbProduct.name;
         image = dbProduct.image || image;
-
-        // Atomic stock decrement with concurrency protection
-        const updated = await Product.findOneAndUpdate(
-          { _id: dbProduct._id, stock: { $gte: quantity } },
-          { $inc: { stock: -quantity } },
-          { new: true }
-        );
-
-        if (!updated) {
-          return res.status(400).json({
-            success: false,
-            message: `Insufficient stock for ${name}. Only ${dbProduct.stock} items remaining.`,
-          });
-        }
       } else {
-        // Fallback to static catalog
         const catalogProduct = getCatalogProductById(item.productId);
         if (!catalogProduct) {
           return res.status(400).json({
@@ -80,7 +78,8 @@ export const placeOrder = async (req, res) => {
       subTotal += price * quantity;
       totalItems += quantity;
 
-      verifiedProducts.push({
+      validatedItems.push({
+        dbProduct,
         productId: String(item.productId),
         name,
         image,
@@ -91,7 +90,120 @@ export const placeOrder = async (req, res) => {
 
     const shippingFee = totalItems > 0 ? totalItems * 2 : 0;
     const calculatedTotal = subTotal + shippingFee;
+    const expectedAmountPaise = Math.round(calculatedTotal * 100);
 
+    // Step 2: Strict authoritative Razorpay verification
+    if (paymentMethod === "Razorpay") {
+      // A. Mandatory presence of all cryptographic parameters (Prevents Signature Bypass)
+      if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+        return res.status(400).json({
+          success: false,
+          message: "Razorpay order ID, payment ID, and cryptographic signature are all required.",
+        });
+      }
+
+      // B. Replay Attack Prevention (Ensures payment ID hasn't been redeemed previously)
+      const existingOrder = await Order.findOne({ razorpayPaymentId });
+      if (existingOrder) {
+        return res.status(400).json({
+          success: false,
+          message: "This payment transaction has already been used for another order.",
+        });
+      }
+
+      const keyId = process.env.RAZORPAY_KEY_ID;
+      const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+      if (!keyId || !keySecret) {
+        return res.status(500).json({
+          success: false,
+          message: "Razorpay gateway credentials are not configured on the server.",
+        });
+      }
+
+      // C. Cryptographic HMAC-SHA256 signature verification with timing-safe comparison
+      const expectedSignature = crypto
+        .createHmac("sha256", keySecret)
+        .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+        .digest("hex");
+
+      const expectedBuf = Buffer.from(expectedSignature, "utf-8");
+      const receivedBuf = Buffer.from(razorpaySignature, "utf-8");
+
+      if (
+        expectedBuf.length !== receivedBuf.length ||
+        !crypto.timingSafeEqual(expectedBuf, receivedBuf)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Cryptographic signature mismatch. Payment verification failed.",
+        });
+      }
+
+      // D. Direct verification with Razorpay Gateway API (Amount & Capture check)
+      const razorpay = new Razorpay({
+        key_id: keyId,
+        key_secret: keySecret,
+      });
+
+      const paymentRecord = await razorpay.payments.fetch(razorpayPaymentId);
+
+      if (!paymentRecord) {
+        return res.status(400).json({
+          success: false,
+          message: "Payment transaction record not found with Razorpay.",
+        });
+      }
+
+      if (paymentRecord.order_id !== razorpayOrderId) {
+        return res.status(400).json({
+          success: false,
+          message: "Payment record does not correspond to the requested Razorpay order.",
+        });
+      }
+
+      if (!["captured", "authorized"].includes(paymentRecord.status)) {
+        return res.status(400).json({
+          success: false,
+          message: `Payment status is '${paymentRecord.status}'. Only captured payments can be completed.`,
+        });
+      }
+
+      if (paymentRecord.amount !== expectedAmountPaise) {
+        return res.status(400).json({
+          success: false,
+          message: `Payment amount mismatch: Expected ₹${calculatedTotal} (${expectedAmountPaise} paise) but gateway received ${paymentRecord.amount} paise.`,
+        });
+      }
+    }
+
+    // Step 3: Concurrency-safe atomic stock decrement (only after payment is 100% verified)
+    for (const item of validatedItems) {
+      if (item.dbProduct) {
+        const updated = await Product.findOneAndUpdate(
+          { _id: item.dbProduct._id, stock: { $gte: item.quantity } },
+          { $inc: { stock: -item.quantity } },
+          { new: true }
+        );
+
+        if (!updated) {
+          return res.status(400).json({
+            success: false,
+            message: `Insufficient stock for ${item.name}.`,
+          });
+        }
+      }
+    }
+
+    const verifiedProducts = validatedItems.map(({ productId, name, image, price, quantity }) => ({
+      productId,
+      name,
+      image,
+      price,
+      quantity,
+    }));
+
+    const isPaid = paymentMethod === "Razorpay";
     const initialTimeline = [
       {
         status: "Pending",
@@ -99,8 +211,6 @@ export const placeOrder = async (req, res) => {
         note: "Order received and pending processing",
       },
     ];
-
-    const isPaid = paymentMethod === "Razorpay" && Boolean(razorpayPaymentId);
 
     const order = await Order.create({
       user: req.user.id,
@@ -167,12 +277,60 @@ export const getOrders = async (req, res) => {
 // ======================
 export const createRazorpayOrder = async (req, res) => {
   try {
-    const { amount } = req.body;
+    const { products, amount } = req.body;
 
-    if (!amount || isNaN(amount) || amount <= 0) {
+    let calculatedTotal = 0;
+
+    // Step 1: Compute authoritative amount from database products if provided
+    if (Array.isArray(products) && products.length > 0) {
+      let subTotal = 0;
+      let totalItems = 0;
+
+      for (const item of products) {
+        const quantity = parseInt(item.quantity, 10);
+        if (isNaN(quantity) || quantity <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: `Invalid quantity for item ${item.name || item.productId}`,
+          });
+        }
+
+        let dbProduct = null;
+        if (item.productId && item.productId.match(/^[0-9a-fA-F]{24}$/)) {
+          dbProduct = await Product.findById(item.productId);
+        } else {
+          dbProduct = await Product.findOne({
+            $or: [{ name: item.name }, { _id: item.productId }],
+          });
+        }
+
+        let price = 0;
+        if (dbProduct) {
+          price = dbProduct.price;
+        } else {
+          const catalogProduct = getCatalogProductById(item.productId);
+          if (!catalogProduct) {
+            return res.status(400).json({
+              success: false,
+              message: `Product ${item.name || item.productId} is unavailable.`,
+            });
+          }
+          price = catalogProduct.price;
+        }
+
+        subTotal += price * quantity;
+        totalItems += quantity;
+      }
+
+      const shippingFee = totalItems > 0 ? totalItems * 2 : 0;
+      calculatedTotal = subTotal + shippingFee;
+    } else if (amount && !isNaN(amount) && Number(amount) > 0) {
+      // Fallback for legacy calls
+      calculatedTotal = Number(amount);
+    } else {
       return res.status(400).json({
         success: false,
-        message: "A valid positive amount is required",
+        message: "Products list or a valid positive amount is required to create a payment order.",
       });
     }
 
@@ -191,8 +349,10 @@ export const createRazorpayOrder = async (req, res) => {
       key_secret: keySecret,
     });
 
+    const amountInPaise = Math.round(calculatedTotal * 100);
+
     const order = await razorpay.orders.create({
-      amount: Math.round(amount * 100), // amount in paise
+      amount: amountInPaise,
       currency: "INR",
       receipt: `rcpt_${Date.now()}`,
     });
@@ -219,10 +379,11 @@ export const verifyRazorpayPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
-    if (!razorpay_payment_id) {
+    // Fix: Prevent Signature Bypass via Optional Fields (Require all 3 fields)
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({
         success: false,
-        message: "Payment ID is required for verification",
+        message: "Order ID, Payment ID, and Signature are all strictly required for cryptographic verification.",
       });
     }
 
@@ -235,26 +396,30 @@ export const verifyRazorpayPayment = async (req, res) => {
       });
     }
 
-    if (razorpay_order_id && razorpay_signature) {
-      const expectedSignature = crypto
-        .createHmac("sha256", keySecret)
-        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-        .digest("hex");
+    const expectedSignature = crypto
+      .createHmac("sha256", keySecret)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest("hex");
 
-      if (expectedSignature !== razorpay_signature) {
-        return res.status(400).json({
-          success: false,
-          message: "Cryptographic signature mismatch. Payment verification failed.",
-        });
-      }
+    const expectedBuf = Buffer.from(expectedSignature, "utf-8");
+    const receivedBuf = Buffer.from(razorpay_signature, "utf-8");
+
+    if (
+      expectedBuf.length !== receivedBuf.length ||
+      !crypto.timingSafeEqual(expectedBuf, receivedBuf)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Cryptographic signature mismatch. Payment verification failed.",
+      });
     }
 
     res.status(200).json({
       success: true,
       verified: true,
-      message: "Payment verified successfully",
+      message: "Payment signature verified successfully",
       paymentId: razorpay_payment_id,
-      orderId: razorpay_order_id || null,
+      orderId: razorpay_order_id,
     });
   } catch (error) {
     res.status(500).json({

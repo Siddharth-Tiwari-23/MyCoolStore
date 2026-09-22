@@ -77,6 +77,7 @@ const OrderSummary = ({
           paymentMethod,
           razorpayOrderId,
           razorpayPaymentId,
+          razorpaySignature,
         }),
       });
 
@@ -114,6 +115,7 @@ const OrderSummary = ({
         await completeOrderPlacement({
           razorpayOrderId: null,
           razorpayPaymentId: null,
+          razorpaySignature: null,
         });
         return;
       }
@@ -126,7 +128,15 @@ const OrderSummary = ({
         throw new Error("Unable to load Razorpay SDK. Please check your internet connection.");
       }
 
-      const rzpOrder = await createRazorpayOrder(orderTotal);
+      const productsPayload = cart.map((item) => ({
+        productId: String(item.id),
+        name: item.name,
+        image: item.image,
+        price: item.price,
+        quantity: item.quantity,
+      }));
+
+      const rzpOrder = await createRazorpayOrder(productsPayload);
       if (!rzpOrder.success || !rzpOrder.keyId) {
         throw new Error(rzpOrder.message || "Failed to initialize payment gateway");
       }
