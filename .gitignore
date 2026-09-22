@@ -25,6 +25,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Interview / Internal Notes
-INTERVIEW_PREP_GUIDE.md

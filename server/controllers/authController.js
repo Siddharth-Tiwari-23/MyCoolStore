@@ -49,11 +49,14 @@ export const register = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const adminEmail = (process.env.ADMIN_EMAIL || "sid@gmail.com").trim().toLowerCase();
+    const assignedRole = normalizedEmail === adminEmail ? "admin" : "user";
 
     const user = await User.create({
       name: name.trim(),
       email: normalizedEmail,
       password: hashedPassword,
+      role: assignedRole,
     });
 
     res.status(201).json({
@@ -115,6 +118,13 @@ export const login = async (req, res) => {
         success: false,
         message: "Invalid credentials",
       });
+    }
+
+    // Synchronize designated administrator role
+    const adminEmail = (process.env.ADMIN_EMAIL || "sid@gmail.com").trim().toLowerCase();
+    if (normalizedEmail === adminEmail && user.role !== "admin") {
+      user.role = "admin";
+      await user.save();
     }
 
     const token = jwt.sign(
@@ -392,40 +402,4 @@ export const clearCart = async (req, res) => {
       message: error.message,
     });
   }
-};
-
-
-// ======================
-// TOGGLE DEMO ROLE (USER <-> ADMIN)
-// ======================
-export const toggleRole = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    user.role = user.role === "admin" ? "user" : "admin";
-    await user.save();
-
-    res.status(200).json({
-      success: true,
-      message: `Role switched to ${user.role}`,
-      role: user.role,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+};

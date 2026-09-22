@@ -4,6 +4,7 @@ import cors from "cors";
 
 import connectDB from "./config/db.js";
 import Product from "./models/Product.js";
+import User from "./models/User.js";
 import { defaultProducts } from "./data/products.js";
 
 import authRoutes from "./routes/authRoutes.js";
@@ -22,8 +23,19 @@ connectDB().then(async () => {
       await Product.insertMany(defaultProducts);
       console.log("Product catalog successfully seeded! 🌱");
     }
+
+    // Ensure designated admin email always has admin role in database
+    const designatedAdmin = (process.env.ADMIN_EMAIL || "sid@gmail.com").toLowerCase().trim();
+    const updatedAdmin = await User.findOneAndUpdate(
+      { email: new RegExp(`^${designatedAdmin}$`, "i") },
+      { $set: { role: "admin" } },
+      { returnDocument: "after" }
+    );
+    if (updatedAdmin) {
+      console.log(`Designated administrator verified: ${updatedAdmin.email} (role: ${updatedAdmin.role})`);
+    }
   } catch (err) {
-    console.error("Auto-seeding error:", err.message);
+    console.error("Database initialization notice:", err.message);
   }
 });
 

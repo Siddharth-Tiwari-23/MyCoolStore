@@ -10,7 +10,6 @@ import {
   updateCartQuantity,
   removeFromCart,
   clearCart,
-  toggleRole,
 } from "../controllers/authController.js";
 
 import authMiddleware from "../middlewares/authMiddleware.js";
@@ -56,12 +55,6 @@ router.post(
   "/cart/clear",
   authMiddleware,
   clearCart
-);
-
-router.post(
-  "/toggle-role",
-  authMiddleware,
-  toggleRole
 );
 
 export default router;
