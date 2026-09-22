@@ -179,38 +179,30 @@ export const createRazorpayOrder = async (req, res) => {
     const keyId = process.env.RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
-    // If real keys are present, use live Razorpay SDK
-    if (keyId && keySecret) {
-      const razorpay = new Razorpay({
-        key_id: keyId,
-        key_secret: keySecret,
-      });
-
-      const order = await razorpay.orders.create({
-        amount: Math.round(amount * 100), // amount in paise
-        currency: "INR",
-        receipt: `rcpt_${Date.now()}`,
-      });
-
-      return res.status(200).json({
-        success: true,
-        orderId: order.id,
-        amount: order.amount,
-        currency: order.currency,
-        keyId,
-        hasRealGateway: true,
+    if (!keyId || !keySecret) {
+      return res.status(500).json({
+        success: false,
+        message: "Razorpay payment gateway credentials are not configured on the server.",
       });
     }
 
-    // When keys are not yet configured in server environment, use realistic payment gateway simulator
-    res.status(200).json({
-      success: true,
-      orderId: `order_sim_${Date.now()}`,
-      amount: Math.round(amount * 100),
+    const razorpay = new Razorpay({
+      key_id: keyId,
+      key_secret: keySecret,
+    });
+
+    const order = await razorpay.orders.create({
+      amount: Math.round(amount * 100), // amount in paise
       currency: "INR",
-      keyId: keyId || null,
-      hasRealGateway: false,
-      message: "Ready for payment",
+      receipt: `rcpt_${Date.now()}`,
+    });
+
+    return res.status(200).json({
+      success: true,
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      keyId,
     });
   } catch (error) {
     res.status(500).json({
@@ -236,7 +228,14 @@ export const verifyRazorpayPayment = async (req, res) => {
 
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
-    if (keySecret && razorpay_order_id && razorpay_signature) {
+    if (!keySecret) {
+      return res.status(500).json({
+        success: false,
+        message: "Razorpay secret key is not configured on the server.",
+      });
+    }
+
+    if (razorpay_order_id && razorpay_signature) {
       const expectedSignature = crypto
         .createHmac("sha256", keySecret)
         .update(`${razorpay_order_id}|${razorpay_payment_id}`)

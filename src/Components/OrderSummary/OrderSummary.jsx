@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { API_BASE_URL } from "../../config";
 import { createRazorpayOrder, verifyRazorpayPayment } from "../../services/orderService";
-import RazorpayModal from "../Payment/RazorpayModal";
 
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
@@ -30,8 +29,6 @@ const OrderSummary = ({
   const [submitting, setSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("COD"); // "COD" or "Razorpay"
   const [statusMessage, setStatusMessage] = useState("");
-  const [isRazorpayModalOpen, setIsRazorpayModalOpen] = useState(false);
-  const [activeRazorpayOrder, setActiveRazorpayOrder] = useState(null);
 
   const completeOrderPlacement = async ({
     razorpayOrderId = null,
@@ -86,7 +83,6 @@ const OrderSummary = ({
       const data = await response.json();
 
       if (data.success) {
-        setIsRazorpayModalOpen(false);
         setOrderSummary(false);
         setOrderPlaced(true);
         setCart([]);
@@ -124,63 +120,54 @@ const OrderSummary = ({
 
       // Online Razorpay Flow
       setSubmitting(true);
-      setStatusMessage("Connecting to Razorpay gateway...");
-      const rzpOrder = await createRazorpayOrder(orderTotal);
+      setStatusMessage("Connecting to secure Razorpay portal...");
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded || !window.Razorpay) {
+        throw new Error("Unable to load Razorpay SDK. Please check your internet connection.");
+      }
 
-      if (!rzpOrder.success) {
+      const rzpOrder = await createRazorpayOrder(orderTotal);
+      if (!rzpOrder.success || !rzpOrder.keyId) {
         throw new Error(rzpOrder.message || "Failed to initialize payment gateway");
       }
 
-      // If backend has real merchant KYC keys configured, trigger official window.Razorpay
-      if (rzpOrder.hasRealGateway && rzpOrder.orderId && rzpOrder.keyId) {
-        const isLoaded = await loadRazorpayScript();
-        if (isLoaded && window.Razorpay) {
-          try {
-            const paymentResult = await new Promise((resolve, reject) => {
-              const options = {
-                key: rzpOrder.keyId,
-                amount: rzpOrder.amount,
-                currency: rzpOrder.currency || "INR",
-                name: "MyCoolStore",
-                description: "Order Checkout",
-                image: "/logo.png",
-                order_id: rzpOrder.orderId,
-                handler: (res) => resolve(res),
-                modal: {
-                  ondismiss: () => reject(new Error("Payment cancelled by user")),
-                },
-                prefill: {
-                  name: localStorage.getItem("userName") || "Valued Customer",
-                  email: localStorage.getItem("userEmail") || "customer@example.com",
-                  contact: "9876543210",
-                },
-                theme: { color: "#2563eb" },
-              };
+      const options = {
+        key: rzpOrder.keyId,
+        amount: rzpOrder.amount,
+        currency: rzpOrder.currency || "INR",
+        name: "MyCoolStore",
+        description: "Order Checkout",
+        image: "/logo.png",
+        order_id: rzpOrder.orderId,
+        handler: async (response) => {
+          setStatusMessage("Payment authorized! Finalizing order...");
+          await completeOrderPlacement({
+            razorpayOrderId: response.razorpay_order_id,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpaySignature: response.razorpay_signature,
+          });
+        },
+        modal: {
+          ondismiss: () => {
+            setSubmitting(false);
+            setStatusMessage("");
+          },
+        },
+        prefill: {
+          name: localStorage.getItem("userName") || "Customer",
+          email: localStorage.getItem("userEmail") || "customer@example.com",
+          contact: "9876543210",
+        },
+        theme: { color: "#2563eb" },
+      };
 
-              const rzp = new window.Razorpay(options);
-              rzp.on("payment.failed", (response) => {
-                reject(new Error(response?.error?.description || "Payment failed"));
-              });
-              rzp.open();
-            });
-
-            await completeOrderPlacement({
-              razorpayOrderId: paymentResult.razorpay_order_id || rzpOrder.orderId,
-              razorpayPaymentId: paymentResult.razorpay_payment_id,
-              razorpaySignature: paymentResult.razorpay_signature,
-            });
-            return;
-          } catch (rzpErr) {
-            console.warn("Official checkout failed, switching to interactive modal:", rzpErr);
-          }
-        }
-      }
-
-      // Interactive Razorpay Modal (Prevents 'No appropriate payment method found' error)
-      setActiveRazorpayOrder(rzpOrder);
-      setIsRazorpayModalOpen(true);
-      setSubmitting(false);
-      setStatusMessage("");
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", (response) => {
+        setSubmitting(false);
+        setStatusMessage("");
+        alert(response?.error?.description || "Payment failed");
+      });
+      rzp.open();
     } catch (error) {
       console.error(error);
       alert(error.message || "Payment process interrupted.");
@@ -305,23 +292,6 @@ const OrderSummary = ({
           </button>
         </div>
       </div>
-
-      {/* Interactive Razorpay Gateway Modal */}
-      <RazorpayModal
-        isOpen={isRazorpayModalOpen}
-        onClose={() => setIsRazorpayModalOpen(false)}
-        onSuccess={(result) =>
-          completeOrderPlacement({
-            razorpayOrderId: result.razorpay_order_id,
-            razorpayPaymentId: result.razorpay_payment_id,
-            razorpaySignature: result.razorpay_signature,
-          })
-        }
-        amount={orderTotal}
-        orderId={activeRazorpayOrder?.orderId}
-        userEmail={localStorage.getItem("userEmail")}
-        userName={localStorage.getItem("userName")}
-      />
     </section>
   );
 };
